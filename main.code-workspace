@@ -1,0 +1,18 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"*.toml": "toml",
+			"raylib.h": "c",
+			"math.h": "c",
+			"blocks.h": "c",
+			"stdio.h": "c",
+			"*.m": "c",
+			"*.tcc": "c"
+		}
+	}
+}
