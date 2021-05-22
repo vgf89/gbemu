@@ -48,7 +48,7 @@ const struct instruction instructions[256] = {
     {"INC E", 1, inc_e},                         // 0x1C
     {"DEC E", 1, dec_e},                         // 0x1D
     {"LD E, 0x%02X", 2, ld_e_n},                  // 0x1E
-    {"RRA", 1, NULL},                           // 0x1F
+    {"RRA", 1, rra},                           // 0x1F
     {"JR NZ, 0x%02X", 2, jr_nz},                 // 0x20
     {"LD HL, 0x%04X", 3, ld_hl_nn},                 // 0x21
     {"LDI (HL), A", 1, ldi_hlp_a},                   // 0x22
@@ -193,14 +193,14 @@ const struct instruction instructions[256] = {
     {"XOR A, L", 1, xor_l},           // 0xAD
     {"XOR A, (HL)", 1, xor_hlp},        // 0xAE
     {"XOR A, A", 1, xor_a},           // 0xAF
-    {"OR A, B", 1, NULL},            // 0xB0
-    {"OR A, C", 1, NULL},            // 0xB1
-    {"OR A, D", 1, NULL},            // 0xB2
-    {"OR A, E", 1, NULL},            // 0xB3
-    {"OR A, H", 1, NULL},            // 0xB4
-    {"OR A, L", 1, NULL},            // 0xB5
-    {"OR A, (HL)", 1, NULL},         // 0xB6
-    {"OR A, A", 1, NULL},            // 0xB7
+    {"OR A, B", 1, or_a_b},            // 0xB0
+    {"OR A, C", 1, or_a_c},            // 0xB1
+    {"OR A, D", 1, or_a_d},            // 0xB2
+    {"OR A, E", 1, or_a_e},            // 0xB3
+    {"OR A, H", 1, or_a_h},            // 0xB4
+    {"OR A, L", 1, or_a_l},            // 0xB5
+    {"OR A, (HL)", 1, or_a_hlp},         // 0xB6
+    {"OR A, A", 1, or_a_a},            // 0xB7
     {"CP A, B", 1, NULL},            // 0xB8
     {"CP A, C", 1, NULL},            // 0xB9
     {"CP A, D", 1, NULL},            // 0xBA
@@ -382,56 +382,241 @@ void nop()
     
 }
 
-
-void inc_bc() {
-    registers.bc ++;
-    
-}
-void inc_de() {
-    registers.de++;
-    
-}
-void inc_hl() {
-    registers.hl++;
-    
-}
-void inc_sp() {
-    registers.sp++;
-    
+void inc_a()
+{
+    reset_inc_flags();
+    if ((registers.a & (1 << 2)) != 0)
+    {
+        FLAGS_SET(FLAGS_HALFCARRY);
+    }
+    registers.a++;
+    if (registers.a == 0)
+    {
+        FLAGS_SET(FLAGS_ZERO);
+    }
 }
 
-void inc_b() {
+void inc_b()
+{
+    reset_inc_flags();
+    if ((registers.b & (1 << 2)) != 0)
+    {
+        FLAGS_SET(FLAGS_HALFCARRY);
+    }
     registers.b++;
-    
+    if (registers.b == 0)
+    {
+        FLAGS_SET(FLAGS_ZERO);
+    }
 }
-void inc_d() {
+void inc_c()
+{
+    reset_inc_flags();
+    if ((registers.c & (1 << 2)) != 0)
+    {
+        FLAGS_SET(FLAGS_HALFCARRY);
+    }
+    registers.c++;
+    if (registers.c == 0)
+    {
+        FLAGS_SET(FLAGS_ZERO);
+    }
+}
+void inc_d()
+{
+    reset_inc_flags();
+    if ((registers.d & (1 << 2)) != 0)
+    {
+        FLAGS_SET(FLAGS_HALFCARRY);
+    }
     registers.d++;
-    
+    if (registers.d == 0)
+    {
+        FLAGS_SET(FLAGS_ZERO);
+    }
 }
-void inc_h() {
+void inc_e()
+{
+    reset_inc_flags();
+    if ((registers.e & (1 << 2)) != 0)
+    {
+        FLAGS_SET(FLAGS_HALFCARRY);
+    }
+    registers.e++;
+    if (registers.e == 0)
+    {
+        FLAGS_SET(FLAGS_ZERO);
+    }
+}
+void inc_h()
+{
+    reset_inc_flags();
+    if ((registers.h & (1 << 2)) != 0)
+    {
+        FLAGS_SET(FLAGS_HALFCARRY);
+    }
     registers.h++;
-    
+    if (registers.h == 0)
+    {
+        FLAGS_SET(FLAGS_ZERO);
+    }
 }
-void inc_hlp() {
-    memory.memory[registers.h]++;
-    
+void inc_l()
+{
+    reset_inc_flags();
+    if ((registers.l & (1 << 2)) != 0)
+    {
+        FLAGS_SET(FLAGS_HALFCARRY);
+    }
+    registers.l++;
+    if (registers.l == 0)
+    {
+        FLAGS_SET(FLAGS_ZERO);
+    }
 }
 
+void inc_hlp() {
+    reset_inc_flags();
+    if ((memory.memory[registers.hl] & (1 << 2)) != 0)
+    {
+        FLAGS_SET(FLAGS_HALFCARRY);
+    }
+    memory.memory[registers.hl]++;
+    if (memory.memory[registers.hl] == 0)
+    {
+        FLAGS_SET(FLAGS_ZERO);
+    }
+}
+
+void reset_inc_flags()
+{
+    FLAGS_CLEAR(FLAGS_ZERO);
+    FLAGS_CLEAR(FLAGS_NEGATIVE);
+    FLAGS_CLEAR(FLAGS_HALFCARRY);
+}
+
+void inc_bc()
+{
+    registers.bc++;
+}
+void inc_de()
+{
+    registers.de++;
+}
+void inc_hl()
+{
+    registers.hl++;
+}
+void inc_sp()
+{
+    registers.sp++;
+}
+
+
+
+
+
+void dec_a(){
+    reset_dec_flags();
+    if ((registers.a & (1 << 3)) == 0)
+    {
+        FLAGS_SET(FLAGS_HALFCARRY);
+    }
+    registers.a--;
+    if (registers.a == 0)
+    {
+        FLAGS_SET(FLAGS_ZERO);
+    }
+}
 void dec_b() {
+    reset_dec_flags();
+    if ((registers.b & (1 << 3)) == 0)
+    {
+        FLAGS_SET(FLAGS_HALFCARRY);
+    }
     registers.b--;
-    
+    if (registers.b == 0)
+    {
+        FLAGS_SET(FLAGS_ZERO);
+    }
+}
+void dec_c() {
+    reset_dec_flags();
+    if ((registers.c & (1 << 3)) == 0)
+    {
+        FLAGS_SET(FLAGS_HALFCARRY);
+    }
+    registers.c--;
+    if (registers.c == 0)
+    {
+        FLAGS_SET(FLAGS_ZERO);
+    }
 }
 void dec_d() {
+    reset_dec_flags();
+    if ((registers.d & (1 << 3)) == 0)
+    {
+        FLAGS_SET(FLAGS_HALFCARRY);
+    }
     registers.d--;
-    
+    if (registers.d == 0)
+    {
+        FLAGS_SET(FLAGS_ZERO);
+    }
+}
+void dec_e() {
+    reset_dec_flags();
+    if ((registers.e & (1 << 3)) == 0)
+    {
+        FLAGS_SET(FLAGS_HALFCARRY);
+    }
+    registers.e--;
+    if (registers.e == 0)
+    {
+        FLAGS_SET(FLAGS_ZERO);
+    }
 }
 void dec_h() {
+    reset_dec_flags();
+    if ((registers.h & (1 << 3)) == 0)
+    {
+        FLAGS_SET(FLAGS_HALFCARRY);
+    }
     registers.h--;
-    
+    if (registers.h == 0)
+    {
+        FLAGS_SET(FLAGS_ZERO);
+    }
+}
+void dec_l() {
+    reset_dec_flags();
+    if ((registers.l & (1 << 3)) == 0)
+    {
+        FLAGS_SET(FLAGS_HALFCARRY);
+    }
+    registers.l--;
+    if (registers.l == 0)
+    {
+        FLAGS_SET(FLAGS_ZERO);
+    }
 }
 void dec_hlp() {
-    memory.memory[registers.h]--;
-    
+    reset_dec_flags();
+    if ((memory.memory[registers.hl] & (1 << 3)) == 0)
+    {
+        FLAGS_SET(FLAGS_HALFCARRY);
+    }
+    memory.memory[registers.hl]--;
+    if (memory.memory[registers.hl] == 0)
+    {
+        FLAGS_SET(FLAGS_ZERO);
+    }
+}
+
+void reset_dec_flags() {
+    FLAGS_CLEAR(FLAGS_ZERO);
+    FLAGS_SET(FLAGS_NEGATIVE);
+    FLAGS_CLEAR(FLAGS_HALFCARRY);
 }
 
 
@@ -452,75 +637,81 @@ void dec_sp() {
     
 }
 
-void inc_c() {
-    registers.c++;
-    
-}
-void inc_e() {
-    registers.e++;
-    
-}
-void inc_l() {
-    registers.l++;
-    
-}
-void inc_a() {
-    registers.a++;
-    
-}
-
-void dec_c() {
-    registers.c--;
-    
-}
-void dec_e() {
-    registers.e--;
-    
-}
-void dec_l() {
-    registers.l--;
-    
-}
-void dec_a() {
-    registers.a--;
-    
-}
-
 
 void xor_b() {
     registers.a ^= registers.b;
-    
+    set_or_flags();
 }
 void xor_c() {
     registers.a ^= registers.c;
-    
+    set_or_flags();
 }
 void xor_d() {
     registers.a ^= registers.d;
-    
+    set_or_flags();
 }
 void xor_e() {
     registers.a ^= registers.e;
-    
+    set_or_flags();
 }
 void xor_h() {
     registers.a ^= registers.h;
-    
+    set_or_flags();
 }
 void xor_l() {
     registers.a ^= registers.l;
-    
+    set_or_flags();
 }
 void xor_hlp() {
     registers.a ^= memory.memory[registers.hl];
-    
+    set_or_flags();
 }
 void xor_a() {
     registers.a ^= registers.a;
-    
+    set_or_flags();
 }
 
+void or_a_a() {
+    registers.a |= registers.a;
+    set_or_flags();
+}
+void or_a_b() {
+    registers.a |= registers.b;
+    set_or_flags();
+}
+void or_a_c() {
+    registers.a |= registers.c;
+    set_or_flags();
+}
+void or_a_d() {
+    registers.a |= registers.d;
+    set_or_flags();
+}
+void or_a_e() {
+    registers.a |= registers.e;
+    set_or_flags();
+}
+void or_a_h() {
+    registers.a |= registers.h;
+    set_or_flags();
+}
+void or_a_l() {
+    registers.a |= registers.l;
+    set_or_flags();
+}
+void or_a_hlp() {
+    registers.a |= memory.memory[registers.hl];
+}
 
+void set_or_flags()
+{
+    FLAGS_CLEAR(FLAGS_ZERO);
+    FLAGS_CLEAR(FLAGS_NEGATIVE);
+    FLAGS_CLEAR(FLAGS_HALFCARRY);
+    FLAGS_CLEAR(FLAGS_CARRY);
+    if (registers.a == 0)
+        FLAGS_SET(FLAGS_ZERO);
+}
 
 void ld_a_n(unsigned char value) {
     registers.a = value;
@@ -885,7 +1076,24 @@ void ld_hlp_l() {
 
 
 
+void rra() {
+    unsigned char iscarry = FLAGS_ISSET(FLAGS_CARRY);
+    unsigned char lastbit = registers.a & (1);
+    registers.a >>= 1;
 
+    if (iscarry)
+    {
+        registers.a |= (1<<7);
+    } else {
+        registers.f &= ~(1<<7);
+    }
+    if (lastbit) {
+        FLAGS_SET(FLAGS_CARRY);
+    } else
+    {
+        FLAGS_CLEAR(FLAGS_CARRY);
+    }
+}
 
 
 

@@ -78,6 +78,8 @@ void inc_d();
 void inc_h();
 void inc_hlp();
 
+void reset_inc_flags();
+
 void dec_b();
 void dec_d();
 void dec_h();
@@ -98,6 +100,8 @@ void dec_e();
 void dec_l();
 void dec_a();
 
+void reset_dec_flags();
+
 void xor_b();
 void xor_c();
 void xor_d();
@@ -106,6 +110,17 @@ void xor_h();
 void xor_l();
 void xor_hlp();
 void xor_a();
+
+void or_a_a();
+void or_a_b();
+void or_a_c();
+void or_a_d();
+void or_a_e();
+void or_a_h();
+void or_a_l();
+void or_a_hlp();
+
+void set_or_flags();
 
 
 void ld_bc_nn(unsigned short value);
@@ -200,7 +215,7 @@ void ld_hlp_l();
 //    {"halt", 1, null},               // 0x76
 
 
-
+void rra();
 
 
 
