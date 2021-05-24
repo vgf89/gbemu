@@ -21,7 +21,7 @@
 
 #include <stdio.h>
 #include "raylib.h"
-#include "cpu.h"
+#include "gameboy.h"
 
 extern struct registers_t registers;
 
@@ -60,7 +60,7 @@ int main()
         //UpdateCamera(&camera);
         //----------------------------------------------------------------------------------
 
-        cpuStep();
+        step();
 
         // Draw
         //----------------------------------------------------------------------------------

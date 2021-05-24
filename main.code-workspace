@@ -12,7 +12,9 @@
 			"blocks.h": "c",
 			"stdio.h": "c",
 			"*.m": "c",
-			"*.tcc": "c"
+			"*.tcc": "c",
+			"gameboy.h": "c",
+			"ppu.h": "c"
 		}
 	}
 }

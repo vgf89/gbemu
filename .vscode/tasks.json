@@ -43,14 +43,14 @@
                 "args": [
                     "RAYLIB_PATH=C:/raylib/raylib",
                     "PROJECT_NAME=gbemu",
-                    "OBJS=main.c cpu.c memory.c",
+                    "OBJS=main.c gameboy.c cpu.c memory.c ppu.c",
                 ]
             },
             "osx": {
                 "args": [
                     "RAYLIB_PATH=<path_to_raylib>/raylib",
                     "PROJECT_NAME=gbemu",
-                    "OBJS=main.c cpu.c memory.c",
+                    "OBJS=main.c gameboy.c cpu.c memory.c ppu.c",
                 ]
             },
             "group": "build",

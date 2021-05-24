@@ -65,8 +65,6 @@ struct registers_t {
 
 extern uint8_t IME_flag;
 
-void loadRom(char* rompath);
-void reset();
 void cpuStep();
 
 void reset_flags();
