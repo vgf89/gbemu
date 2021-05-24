@@ -1,0 +1,19 @@
+General:
+[x] Implmement master clock counter
+
+CPU: 
+[x] Implement cpu timings (just do 1 full cycle per instr)
+    - Run instruction when master clock >= last_master_clock + insr timing
+
+[ ] Implement CPU interrupts
+
+PPU:
+
+[ ] Implement Debugging images:
+    [ ] Tile Pattern Table (shows all tiles)
+    [ ] Background
+    [ ] Window
+    [ ] Sprites
+
+OAM DMA Transfer:
+    [ ] Needs to be implmented to write to OAM outside of HBLANK/VBLANK

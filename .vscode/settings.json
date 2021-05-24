@@ -9,6 +9,8 @@
 		"**/*.exe": true,
 	},
 	"files.associations": {
-		"*.toml": "toml"
+		"*.toml": "toml",
+		"ppu.h": "c",
+		"*.m": "c"
 	}
 }

@@ -72,8 +72,45 @@ void reset()
     registers.pc = 0x0100;
 }
 
+
+const int MAX_CLOCK = 69905; // Number of cycles per frame
+// Magic number for 60FPS. 4194304 cycles per second / 60 = 69905
+// Alternative rate: Super Game Boy 71590 (plus this one's divisible by 4), which might result in frame timing match?
+// There are likely better ways to handle this, i.e. just waiting for VBLANK interrupt to break the step loop.
+// If VBLANK timing is consistent though, we should be breaking based on that timing.
+
+uint32_t clock = 0;
+
+int frames = 0;
+
 void step() {
-    cpuStep();
-    ppuStep();
-    ppuStep();
+    // How to schedule CPU steps:
+    // Number of dots (clock edges) per frame (60fps): 70000
+    // CPU cycle is 4 dots
+    // PPU cycle is 2 dots
+    // CPU and PPU use their own cycle counters, and compare
+    // to the master dot clock to schedule execution.
+    
+
+    clock = 0;
+
+    // Magic number for 60FPS. 4194304 cycles per second / 60 = 69905
+    // Alternative rate: Super Game Boy 71590 (plus this one's divisible by 4)
+    while (clock < MAX_CLOCK)
+    {
+        cpuStep();
+        ppuStep();
+        clock++; // This could probably just be clock += 2, assuming nothing runs on native clock
+
+        // update timers
+        // run interrupts
+    }
+    frames++;
+    printf("%d clock cycles completed!  frame/60: %f\n", MAX_CLOCK, (float)frames / 60.0);
+
+    // render graphics, debug, etc from ppu to textures
+
+    // Reset the clocks so counting can restart. Actually, these subtract the MAX_CLOCK from the internal clock trackers so we introduce extra cycles.
+    reset_cpu_clock(MAX_CLOCK);
+    reset_ppu_clock(MAX_CLOCK);
 }

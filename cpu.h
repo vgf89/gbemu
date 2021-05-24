@@ -65,6 +65,7 @@ struct registers_t {
 
 extern uint8_t IME_flag;
 
+void reset_cpu_clock(uint16_t maxclock);
 void cpuStep();
 
 void reset_flags();
