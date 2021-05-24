@@ -2,6 +2,8 @@
 #ifndef CPU_H
 #define CPU_H
 
+#include <stdint.h>
+
 #define FLAGS_ZERO (1 << 7)
 #define FLAGS_NEGATIVE (1 << 6)
 #define FLAGS_HALFCARRY (1 << 5)
@@ -20,53 +22,59 @@ struct registers_t {
 	struct {
 		union {
 			struct {
-				unsigned char f; // Flags
-				unsigned char a; // Accumulator
+				uint8_t f; // Flags
+				uint8_t a; // Accumulator
 			};
-			unsigned short af;
+			uint16_t af;
 		};
 	};
 	
 	struct {
 		union {
 			struct {
-				unsigned char c;
-				unsigned char b;
+				uint8_t c;
+				uint8_t b;
 			};
-			unsigned short bc;
+			uint16_t bc;
 		};
 	};
 	
 	struct {
 		union {
 			struct {
-				unsigned char e;
-				unsigned char d;
+				uint8_t e;
+				uint8_t d;
 			};
-			unsigned short de;
+			uint16_t de;
 		};
 	};
 	
 	struct {
 		union {
 			struct {
-				unsigned char l;
-				unsigned char h;
+				uint8_t l;
+				uint8_t h;
 			};
-			unsigned short hl;
+			uint16_t hl;
 		};
 	};
 	
-	unsigned short sp;
-	unsigned short pc;
+	uint16_t sp;
+	uint16_t pc;
 };
+
+extern uint8_t IME_flag;
 
 void loadRom(char* rompath);
 void reset();
 void cpuStep();
 
+void reset_flags();
+
 void nop();
 
+void di();
+void ei();
 
 void inc_bc();
 void inc_de();
@@ -102,6 +110,7 @@ void dec_a();
 
 void reset_dec_flags();
 
+void xor_n(uint8_t n);
 void xor_b();
 void xor_c();
 void xor_d();
@@ -111,41 +120,63 @@ void xor_l();
 void xor_hlp();
 void xor_a();
 
-void or_a_a();
-void or_a_b();
-void or_a_c();
-void or_a_d();
-void or_a_e();
-void or_a_h();
-void or_a_l();
-void or_a_hlp();
+void or_n(uint8_t n);
+void or_a();
+void or_b();
+void or_c();
+void or_d();
+void or_e();
+void or_h();
+void or_l();
+void or_hlp();
 
 void set_or_flags();
 
+void and_n(uint8_t n);
+void and_a();
+void and_b();
+void and_c();
+void and_d();
+void and_e();
+void and_h();
+void and_l();
+void and_hlp();
 
-void ld_bc_nn(unsigned short value);
+void cp_n(uint8_t);
+void cp_a();
+void cp_b();
+void cp_c();
+void cp_d();
+void cp_e();
+void cp_h();
+void cp_l();
+void cp_hlp();
+
+void ld_bc_nn(uint16_t value);
 void ld_bcp_a();
-void ld_b_n(unsigned char value);
-void ld_nnp_sp(unsigned short address);
-void ld_nnp_a(unsigned short address);
-void ld_a_nnp(unsigned short address);
+void ld_b_n(uint8_t value);
+void ld_nnp_sp(uint16_t address);
+void ld_nnp_a(uint16_t address);
+void ld_a_nnp(uint16_t address);
+void ld_np_a(uint8_t address);
+void ld_a_np(uint8_t address);
 void ld_a_bcp();
-void ld_c_n(unsigned char value);
-void ld_de_nn(unsigned short value);
+void ld_c_n(uint8_t value);
+void ld_de_nn(uint16_t value);
 void ld_dep_a();
-void ld_d_n(unsigned char value);
+void ld_d_n(uint8_t value);
 void ld_a_dep();
-void ld_e_n(unsigned char value);
-void ld_hl_nn(unsigned short value);
+void ld_e_n(uint8_t value);
+void ld_hl_nn(uint16_t value);
 void ldi_hlp_a();
-void ld_h_n(unsigned char value);
+void ld_h_n(uint8_t value);
 void ldi_a_hlp();
-void ld_l_n(unsigned char value);
-void ld_sp_nn(unsigned short value);
+void ld_l_n(uint8_t value);
+void ld_sp_nn(uint16_t value);
 void ldd_hlp_a();
-void ld_hlp_n(unsigned char value);
+void ld_hlp_n(uint8_t value);
 void ldd_a_hlp();
-void ld_a_n(unsigned char value);
+void ld_a_n(uint8_t value);
 
 
 void ld_a_a();  
@@ -214,22 +245,62 @@ void ld_hlp_h();
 void ld_hlp_l();
 //    {"halt", 1, null},               // 0x76
 
+void add_a_n(uint8_t n);
+void add_a_a();
+void add_a_b();
+void add_a_c();
+void add_a_d();
+void add_a_e();
+void add_a_h();
+void add_a_l();
+void add_a_hlp();
 
+void add_hl_bc();
+void add_hl_de();
+void add_hl_hl();
+void add_hl_sp();
+void add_sp_n();
+
+void adc_a_n(uint8_t n);
+void adc_a_a();
+void adc_a_b();
+void adc_a_c();
+void adc_a_d();
+void adc_a_e();
+void adc_a_h();
+void adc_a_l();
+void adc_a_hlp();
+
+void sub_a_n(uint8_t n);
+void sub_a_a();
+void sub_a_b();
+void sub_a_c();
+void sub_a_d();
+void sub_a_e();
+void sub_a_h();
+void sub_a_l();
+void sub_a_hlp();
+
+void sbc_a_n(uint8_t n);
+void sbc_a_a();
+void sbc_a_b();
+void sbc_a_c();
+void sbc_a_d();
+void sbc_a_e();
+void sbc_a_h();
+void sbc_a_l();
+void sbc_a_hlp();
+
+void rlca();
 void rra();
 
+void jp_nn(uint16_t address);
+void jp_nc(uint16_t address);
+void jr_nz(int8_t offset);
 
 
-
-
-
-
-
-void jp_nn(unsigned short address);
-void jr_nz(unsigned char offset);
-
-
-void undefined(unsigned char opcode, unsigned char pc);
-void unimplemented(unsigned char opcode);
+void undefined();
+void unimplemented(uint8_t opcode);
 
 void print_registers();
 

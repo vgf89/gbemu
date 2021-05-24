@@ -23,14 +23,16 @@
 #include "raylib.h"
 #include "cpu.h"
 
-int main() 
+extern struct registers_t registers;
+
+int main()
 {
     // Initialization
     //--------------------------------------------------------------------------------------
-    const int screenWidth = 160;
-    const int screenHeight = 144;
+    const int screenWidth = 400;//160;
+    const int screenHeight = 400;//144;
 
-    InitWindow(screenWidth, screenHeight, "raylib");
+    //InitWindow(screenWidth, screenHeight, "raylib");
 
     //Camera camera = { 0 };
     //camera.position = (Vector3){ 10.0f, 10.0f, 8.0f };
@@ -51,7 +53,7 @@ int main()
 
     printf("\n\n");
     // Main game loop
-    while (!WindowShouldClose())    // Detect window close button or ESC key
+    while (1)//!WindowShouldClose())    // Detect window close button or ESC key
     {
         // Update
         //----------------------------------------------------------------------------------
@@ -62,22 +64,35 @@ int main()
 
         // Draw
         //----------------------------------------------------------------------------------
-        BeginDrawing();
+        /*BeginDrawing();
 
             ClearBackground(RAYWHITE);
 
-            DrawText("This is a raylib example", 10, 40, 10, DARKGRAY);
+            char buff[256];
 
-            DrawFPS(10, 10);
+            sprintf(buff, "AF: %04X", registers.af);
+            DrawText(buff, 5, 5, 10, BLACK);
+            sprintf(buff, "BC: %04X", registers.bc);
+            DrawText(buff, 5, 15, 10, BLACK);
+            sprintf(buff, "DE: %04X", registers.de);
+            DrawText(buff, 5, 25, 10, BLACK);
+            sprintf(buff, "HL: %04X", registers.hl);
+            DrawText(buff, 5, 35, 10, BLACK);
+            sprintf(buff, "SP: %04X", registers.sp);
+            DrawText(buff, 5, 45, 10, BLACK);
+            sprintf(buff, "PC: %04X", registers.pc);
+            DrawText(buff, 5, 55, 10, BLACK);
+
+            DrawFPS(10, 350);
 
 
-        EndDrawing();
+        EndDrawing();*/
         //----------------------------------------------------------------------------------
     }
 
     // De-Initialization
     //--------------------------------------------------------------------------------------
-    CloseWindow();        // Close window and OpenGL context
+    //CloseWindow();        // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
 
     return 0;

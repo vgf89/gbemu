@@ -4,14 +4,14 @@ union memory_t memory = {0};
 
 
 // TODO: Implement ECHORAM 
-unsigned char readChar(unsigned short address)
+uint8_t readChar(uint16_t address)
 {
     return memory.memory[address];
 }
 
-unsigned short readShort(unsigned short address)
+uint16_t readShort(uint16_t address)
 {
-    unsigned short c1 = (unsigned short)memory.memory[address];
-    unsigned short c2 = (unsigned short)memory.memory[address + 1];
+    uint16_t c1 = (uint16_t)memory.memory[address];
+    uint16_t c2 = (uint16_t)memory.memory[address + 1];
     return (c2 << 8) | c1;
 }
