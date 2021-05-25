@@ -2,11 +2,24 @@
 // 160B memory.OAM
 
 #include "ppu.h"
+#include "memory.h"
 
 uint8_t LCD[144][160];
 
 extern uint32_t clock;
 uint32_t ppuclock;
+
+uint8_t line = 0;
+
+int mode = 2;
+/* Modes:
+2: 80 dots.   Searching OAM for OBJs that render on this line. VRAM unlocked.
+3: 168-291 dots depending on sprite count. Reading OAM and VRAM to generate picture. Locks VRAM, OAM, CGB Palette.
+0: 85-208 dots. depending on mode 3. Horizontal Blanking. VRAM, OAM, CGB Palette unlocked.
+1: 4560 dots (10 scanlines). Vertical Blanking. VRAM, OAM, CGB Palette unlocked
+
+Total dot count: (80 + 376) * 144 + 4560 = 70224
+*/
 
 void reset_ppu_clock(uint16_t maxclock)
 {
@@ -19,7 +32,42 @@ void ppuStep()
     {
         return;
     }
-    ppuclock += 2; // Minimum clock dots per ppu cycle
+    line = readChar(0xff44);
+
+    switch(mode) {
+        case 2: // OAM search for sprite indexes to render
+            ppuclock += 80; // early return from ppuStep() until line rendering is ready to start
+            mode = 3;
+        break;
+        case 3: // Rendering line
+            ppuclock += 168; // FIXME. This is not accurate.
+            mode = 0;
+        break;
+        case 0:              // Horizontal Blanking
+            ppuclock += 208; // FIXME. this is not accurate
+            if (line == 144) {
+                mode = 1;
+            }
+
+            line++;
+            writeChar(0xff44, line); //
+            // Set HBlank interrupt/register/whatever
+            // Set ppuclock to end of Mode 0 time
+        break;
+        case 1: // Vertical Blanking. Similar to horizontal blanking, but long.
+            // Spit out the final image
+            // Set VBlank interrupt etc
+            ppuclock += 456;
+
+            if (line == 153) {
+                mode = 2;
+                line = 0;
+            }
+            writeChar(0xff44, line);
+        break;
+    }
+
+    //ppuclock += 2; // Minimum clock dots per ppu cycle
 
     // Frames are defined by a few things...
     // Tiles:
@@ -155,3 +203,9 @@ Bit 1-0 - Mode Flag                          (Mode 0-3, see below) (Read Only)
           2: Searching OAM
           3: Transferring Data to LCD Controller
 */
+
+/* SCY  Scroll Y ($FF42) R/W */
+
+/* SCX  Scroll X ($FF43) R/W */
+
+/* LY  LCDC Y-Coordinate ($FF44) R */ /* If this isn't implemented we get a loop */

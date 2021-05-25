@@ -25,7 +25,7 @@ uint8_t IME_flag = 1;
 // https://izik1.github.io/gbops/
 const struct instruction instructions[256] = {
     {"NOP", 1, 4, nop},                    // 0x00
-    {"LD BC, 0x%04X", 3, 12, undefined},    // 0x01
+    {"LD BC, 0x%04X", 3, 12, ld_bc_nn},    // 0x01
     {"LD (BC), A", 1, 8, ld_bcp_a},        // 0x02
     {"INC BC", 1, 8, inc_bc},              // 0x03
     {"INC B", 1, 4, inc_b},                // 0x04
@@ -48,7 +48,7 @@ const struct instruction instructions[256] = {
     {"DEC D", 1, 4, dec_d},                // 0x15
     {"LD D, 0x%02X", 2, 8, ld_d_n},        // 0x16
     {"RLA", 1, 4, NULL},                   // 0x17
-    {"JR 0x%02X", 2, 12, NULL},             // 0x18
+    {"JR 0x%02X", 2, 12, jr_nn},             // 0x18
     {"ADD HL, DE", 1, 8, add_hl_de},       // 0x19
     {"LD A, (DE)", 1, 8, ld_a_dep},        // 0x1A
     {"DEC DE", 1, 8, dec_de},              // 0x1B
@@ -64,7 +64,7 @@ const struct instruction instructions[256] = {
     {"DEC H", 1, 4, dec_h},                // 0x25
     {"LD H, 0x%02X", 2, 8, ld_h_n},        // 0x26
     {"DAA", 1, 4, NULL},                   // 0x27
-    {"JR Z, 0x%02X", 2, 8, NULL},          // 0x28  8t-12t
+    {"JR Z, 0x%02X", 2, 8, jr_z},          // 0x28  8t-12t
     {"ADD HL, HL", 1, 8, add_hl_hl},       // 0x29
     {"LDI A, (HL)", 1, 8, ldi_a_hlp},      // 0x2A
     {"DEC HL", 1, 8, dec_hl},              // 0x2B
@@ -217,43 +217,43 @@ const struct instruction instructions[256] = {
     {"CP A, (HL)", 1, 8, cp_hlp},          // 0xBE
     {"CP A, A", 1, 3, cp_a},               // 0xBF
     {"RET NZ", 1, 8, NULL},                // 0xC0  8t-20t
-    {"POP BC", 1, 12, NULL},                // 0xC1
+    {"POP BC", 1, 12, pop_bc},                // 0xC1
     {"JP NZ, 0x%04X", 3, 12, NULL},         // 0xC2 12t-16t
     {"JP 0x%04X", 3, 16, jp_nn},            // 0xC3
-    {"CALL NZ", 1, 12, NULL},               // 0xC4 12t-24t
-    {"PUSH BC", 1, 16, NULL},               // 0xC5
+    {"CALL NZ", 3, 12, call_nz},               // 0xC4 12t-24t
+    {"PUSH BC", 1, 16, push_bc},               // 0xC5
     {"ADD A, 0x%02X", 2, 8, add_a_n},      // 0xC6
     {"RST 00h", 1, 16, NULL},               // 0xC7
     {"RET Z", 1, 8, NULL},                 // 0xC8 8t-20t
-    {"RET", 1, 16, NULL},                   // 0xC9
+    {"RET", 1, 16, ret},                   // 0xC9
     {"JP Z, 0x%04X", 3, 12, NULL},          // 0xCA 12t-16t
     {"PREFIX CB", 1, 4, NULL},             // 0xCB
-    {"CALL Z, 0x%04X", 3, 12, NULL},        // 0xCC 12t-24t
-    {"CALL 0x%04X", 3, 24, NULL},           // 0xCD
+    {"CALL Z, 0x%04X", 3, 12, call_z},        // 0xCC 12t-24t
+    {"CALL 0x%04X", 3, 24, call_nn},           // 0xCD
     {"ADC A, 0x%02X", 2, 8, NULL},         // 0xCE
     {"RST 08h", 1, 16, NULL},               // 0xCF
     {"RET NC", 1, 8, NULL},                // 0xD0 8t-20t
-    {"POP DE", 1, 12, NULL},                // 0xD1
+    {"POP DE", 1, 12, pop_de},                // 0xD1
     {"JP NC, 0x%04X", 3, 12, jp_nc},        // 0xD2 12t-16t
     {"undefined", 1, 0, undefined},        // 0xD3
-    {"CALL NC, 0x%04X", 3, 12, NULL},       // 0xD4 12t-24t
-    {"PUSH DE", 1, 16, NULL},               // 0xD5
+    {"CALL NC, 0x%04X", 3, 12, call_nc},       // 0xD4 12t-24t
+    {"PUSH DE", 1, 16, push_de},               // 0xD5
     {"SUB A, 0x%02X", 2, 8, sub_a_n},      // 0xD6
     {"RST 10h", 1, 16, NULL},               // 0xD7
     {"RET C", 1, 8, NULL},                 // 0xD8 8t-20t
     {"RETI", 1, 16, NULL},                  // 0xD9
     {"JP C, 0x%04X", 3, 12, NULL},          // 0xDA 12t-24t
     {"undefined", 1, 0, undefined},        // 0xDB
-    {"CALL C, 0x%04X", 3, 12, NULL},        // 0xDC 12t-24t
+    {"CALL C, 0x%04X", 3, 12, call_c},        // 0xDC 12t-24t
     {"undefined", 1, 0, undefined},        // 0xDD
     {"SBC A, 0x%02X", 2, 8, NULL},         // 0xDE
     {"RST 18h", 1, 16, NULL},               // 0xDF
     {"LD (FF00 + 0x%02X), A", 2, 12, ld_np_a}, // 0xE0
-    {"POP HL", 1, 12, NULL},                // 0xE1
+    {"POP HL", 1, 12, pop_hl},                // 0xE1
     {"LD (FF00+C), A", 1, 8, NULL},        // 0xE2
     {"undefined", 1, 0, undefined},        // 0xE3
     {"undefined", 1, 0, undefined},        // 0xE4
-    {"PUSH HL", 1, 16, NULL},               // 0xE5
+    {"PUSH HL", 1, 16, push_hl},               // 0xE5
     {"AND A, 0x%02X", 2, 8, and_n},        // 0xE6
     {"RST 20h", 1, 16, NULL},               // 0xE7
     {"ADD SP, 0x%02X", 2, 16, NULL},        // 0xE8
@@ -265,11 +265,11 @@ const struct instruction instructions[256] = {
     {"XOR A, 0x%02X", 2, 8, xor_n},        // 0xEE
     {"RST 28h", 1, 16, NULL},               // 0xEF
     {"LD A, (FF00 + 0x%02X)", 2, 12, ld_a_np}, // 0xF0
-    {"POP AF", 1, 12, NULL},                // 0xF1
+    {"POP AF", 1, 12, pop_af},                // 0xF1
     {"LD A, (FF00 + C)", 1, 8, NULL}, // 0xF2
     {"DI", 1, 4, di},                      // 0xF3
     {"undefined", 1, 0, NULL},             // 0xF4
-    {"PUSH AF", 1, 16, NULL},               // 0xF5
+    {"PUSH AF", 1, 16, push_af},               // 0xF5
     {"OR A, 0x%02X", 2, 8, or_n},          // 0xF6
     {"RST 30h", 1, 16, NULL},               // 0xF7
     {"LD HL, SP + 0x%02X", 2, 12, NULL},    // 0xF8
@@ -303,33 +303,55 @@ void cpuStep() {
     }
 
 
+    static int bptriggered = 0;
+    if (registers.pc == 0xc252) {
+        bptriggered = 1;
+        printf("Breakpoint hit. Press Enter to step execution.\n");
+        fflush(stdout);
+    }
+
+    //print_registers();
+
     if (ins.opcodeLength == 2) operand = (uint16_t)readChar(registers.pc+1);
     if (ins.opcodeLength == 3) operand = readShort(registers.pc+1);
-    registers.pc += ins.opcodeLength;
 
-    cpuclock += ins.cycles;
-
-    //printf("0x%04X  ", registers.pc - ins.opcodeLength);
-
+    //printf("0x%04X  ", registers.pc);
     switch(ins.opcodeLength) {
         case 1:
             //printf(ins.disas);
             //printf("\n");
-            ((void(*)())ins.execute)();
             break;
         case 2:
             //printf(ins.disas, operand);
             //printf("\n");
-            ((void (*)(uint8_t))ins.execute)((uint8_t)operand);
             break;
         case 3:
             //printf(ins.disas, operand);
-            //printf("\n");
+            //printf("  (%02x)\n", readChar(operand));
+            break;
+    }
+
+    if (bptriggered)
+    {
+        getchar();
+    }
+
+
+    registers.pc += ins.opcodeLength;
+
+    cpuclock += ins.cycles;
+
+    switch(ins.opcodeLength) {
+        case 1:
+            ((void(*)())ins.execute)();
+            break;
+        case 2:
+            ((void (*)(uint8_t))ins.execute)((uint8_t)operand);
+            break;
+        case 3:
             ((void (*)(uint16_t))ins.execute)(operand);
             break;
     }
-    //printf("\n");
-    //print_registers();
 }
 
 
@@ -529,7 +551,7 @@ void xor_l() {
     set_or_flags();
 }
 void xor_hlp() {
-    registers.a ^= memory.memory[registers.hl];
+    registers.a ^= readChar(registers.hl);
     set_or_flags();
 }
 void xor_a() {
@@ -571,7 +593,7 @@ void or_l() {
     set_or_flags();
 }
 void or_hlp() {
-    registers.a |= memory.memory[registers.hl];
+    registers.a |= readChar(registers.hl);
 }
 
 void and_n(uint8_t n)
@@ -616,7 +638,7 @@ void and_l()
 }
 void and_hlp()
 {
-    registers.a &= memory.memory[registers.hl];
+    registers.a &= readChar(registers.hl);
 }
 
 void cp_n(uint8_t n)
@@ -708,67 +730,66 @@ void ld_sp_nn(uint16_t value) {
 
 
 void ld_a_bcp() {
-    registers.a = memory.memory[registers.bc];
-    
+    registers.a = readChar(registers.bc);
 }
 void ld_a_dep() {
-    registers.a = memory.memory[registers.de];
+    registers.a = readChar(registers.de);
     
 }
 void ld_bcp_a() {
-    memory.memory[registers.bc] = registers.a;
+    writeChar(registers.bc, registers.a);
     
 }
-void ld_dep_a() {
-    memory.memory[registers.de] = registers.a;
-    
+void ld_dep_a()
+{
+    writeChar(registers.de, registers.a);
 }
 
 void ld_hlp_n(uint8_t value) {
-    memory.memory[registers.hl] = value;
+    writeChar(registers.hl, value);
     
 }
 
 
 void ldi_hlp_a() {
-    memory.memory[registers.hl] = registers.a;
+    writeChar(registers.hl, registers.a);
     registers.hl++;
     
 }
 void ldi_a_hlp() {
-    registers.a = memory.memory[registers.hl];
+    registers.a = readChar(registers.hl);
     registers.hl++;
     
 }
 
 void ldd_hlp_a() {
-    memory.memory[registers.hl] = registers.a;
+    writeChar(registers.hl, registers.a);
     registers.hl--;
     
 }
 void ldd_a_hlp() {
-    registers.a = memory.memory[registers.hl];
+    registers.a = readChar(registers.hl);
     registers.hl--;
     
 }
 
 
 void ld_nnp_sp(uint16_t address) {
-    memory.memory[address] = registers.sp;
+    writeShort(address, registers.sp);
 }
 void ld_nnp_a(uint16_t address) {
-    memory.memory[address] = registers.a;
+    writeChar(address, registers.a);
 }
 void ld_a_nnp(uint16_t address) {
-    registers.a = memory.memory[address];
+    registers.a = readChar(address);
 }
 void ld_np_a(uint8_t address)
 {
-    memory.memory[0xFF00 + address] = registers.a;
+    writeChar(0xFF00 + address, registers.a);
 }
 void ld_a_np(uint8_t address)
 {
-    registers.a = memory.memory[0xFF00 + address];
+    registers.a = readChar(0xFF00 + address);
 }
 
 void ld_a_a() {
@@ -1030,6 +1051,58 @@ void ld_hlp_l() {
 }
 
 
+void push_nn(uint16_t nn)
+{
+    registers.sp -= 2;
+    writeShort(registers.sp, nn);
+}
+
+void push_af()
+{
+    push_nn(registers.af);
+}
+
+void push_bc()
+{
+    push_nn(registers.bc);
+}
+
+void push_de()
+{
+    push_nn(registers.de);
+}
+
+void push_hl()
+{
+    push_nn(registers.hl);
+}
+
+void pop_rr(uint16_t *rr)
+{
+    (*rr) = readShort(registers.sp);
+    registers.sp += 2;
+}
+
+void pop_af()
+{
+    pop_rr(&registers.af);
+}
+
+void pop_bc()
+{
+    pop_rr(&registers.bc);
+}
+
+void pop_de()
+{
+    pop_rr(&registers.de);
+}
+
+void pop_hl()
+{
+    pop_rr(&registers.hl);
+}
+
 void reset_flags() {
     FLAGS_CLEAR(FLAGS_ZERO);
     FLAGS_CLEAR(FLAGS_NEGATIVE);
@@ -1276,23 +1349,87 @@ void jp_nc(uint16_t address)
 {
     if (FLAGS_ISCARRY == 0) {
         registers.pc = address;
+        cpuclock += 4;
     }
+}
+
+void jr_nn(int8_t address)
+{
+    registers.pc += address;
 }
 
 void jr_nz(int8_t offset)
 {
-    if (FLAGS_ISZERO) {
-        return;
+    if (FLAGS_ISZERO == 0)
+    {
+        registers.pc += offset;
+        cpuclock += 4;
     }
-    registers.pc += offset;
 }
 
+void jr_z(int8_t offset)
+{
+    if (FLAGS_ISZERO)
+    {
+        registers.pc += offset;
+        cpuclock += 4;
+    }
+}
 
+void call_nn(uint16_t address)
+{
+    registers.sp -= 2;
+    writeShort(registers.sp, registers.pc);
+    registers.pc = address;
+}
 
+void call_nz(uint16_t address)
+{
+    if (FLAGS_ISZERO == 0) {
+        registers.sp -= 2;
+        writeShort(registers.sp, registers.pc);
+        registers.pc = address;
+        cpuclock += 12; // branch takes additional 12 cycles
+    }
+}
 
+void call_nc(uint16_t address)
+{
+    if (FLAGS_ISCARRY == 0)
+    {
+        registers.sp -= 2;
+        writeShort(registers.sp, registers.pc);
+        registers.pc = address;
+        cpuclock += 12;
+    }
+}
 
+void call_z(uint16_t address)
+{
+    if (FLAGS_ISZERO)
+    {
+        registers.sp -= 2;
+        writeShort(registers.sp, registers.pc);
+        registers.pc = address;
+        cpuclock += 12; // branch takes additional 12 cycles
+    }
+}
 
+void call_c(uint16_t address)
+{
+    if (FLAGS_ISCARRY)
+    {
+        registers.sp -= 2;
+        writeShort(registers.sp, registers.pc);
+        registers.pc = address;
+        cpuclock += 12;
+    }
+}
 
+void ret(){
+    registers.pc = readShort(registers.sp);
+    registers.sp += 2;
+}
 
 
 void undefined() {
@@ -1306,15 +1443,29 @@ void unimplemented(uint8_t opcode) {
     printf(instructions[opcode].disas);
     printf("   unimplemented.");
     //print_registers();
+    fflush(stdout);
     exit(1);
+}
+
+void print_byte_bits(uint8_t b)
+{
+    printf("%d", (b & (1 << 7)) ? 1 : 0);
+    printf("%d", (b & (1 << 6)) ? 1 : 0);
+    printf("%d", (b & (1 << 5)) ? 1 : 0);
+    printf("%d", (b & (1 << 4)) ? 1 : 0);
+    printf("%d", (b & (1 << 3)) ? 1 : 0);
+    printf("%d", (b & (1 << 2)) ? 1 : 0);
+    printf("%d", (b & (1 << 1)) ? 1 : 0);
+    printf("%d", (b & (1)) ? 1 : 0);
 }
 
 void print_registers()
 {
-    printf("AF: %04X\n", registers.af);
-    printf("BC: %04X\n", registers.bc);
-    printf("DE: %04X\n", registers.de);
-    printf("HL: %04X\n", registers.hl);
-    printf("SP: %04X\n", registers.sp);
-    printf("PC: %04X\n", registers.pc);
+    printf("  AF: %04X       \n  BC: %04X  (%02x)\n", registers.af, registers.bc, readChar(registers.bc));
+    printf("  DE: %04X  (%02x)\n  HL: %04X  (%02x)\n", registers.de, readChar(registers.de),  registers.hl, readChar(registers.hl));
+    printf("  SP: %04X  (%02x)\n  PC: %04X\n", registers.sp, readChar(registers.sp), registers.pc);
+
+    printf("  F: 0b");
+    print_byte_bits(registers.f);
+    printf("\n");
 }

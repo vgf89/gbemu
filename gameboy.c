@@ -35,7 +35,7 @@ void reset()
     registers.bc = 0x0013;
     registers.de = 0x00d8;
     registers.hl = 0x014d;
-    registers.sp = 0x014d;
+    registers.sp = 0xfffe;
 
     memory.memory[0xff05] = 0x00;
     memory.memory[0xff06] = 0x00;
@@ -73,9 +73,13 @@ void reset()
 }
 
 
-const int MAX_CLOCK = 69905; // Number of cycles per frame
+const int MAX_CLOCK = 70224; // Number of cycles per frame
 // Magic number for 60FPS. 4194304 cycles per second / 60 = 69905
-// Alternative rate: Super Game Boy 71590 (plus this one's divisible by 4), which might result in frame timing match?
+// Possible rates:
+    // DMG: 69905
+    // Super Game Boy 71590 (plus this one's divisible by 4), which might result in frame timing match?
+    // PPU VBLANK rate: 70224, which should force emulated gameboy vblank to match target framerate (typically 60fps)
+
 // There are likely better ways to handle this, i.e. just waiting for VBLANK interrupt to break the step loop.
 // If VBLANK timing is consistent though, we should be breaking based on that timing.
 
@@ -106,7 +110,7 @@ void step() {
         // run interrupts
     }
     frames++;
-    printf("%d clock cycles completed!  frame/60: %f\n", MAX_CLOCK, (float)frames / 60.0);
+    //printf("%d clock cycles completed!  frame/60: %f\n", MAX_CLOCK, (float)frames / 60.0);
 
     // render graphics, debug, etc from ppu to textures
 

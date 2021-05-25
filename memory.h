@@ -57,4 +57,7 @@ union memory_t {
 uint8_t readChar(uint16_t address);
 uint16_t readShort(uint16_t address);
 
+void writeChar(uint16_t address, uint8_t val);
+void writeShort(uint16_t address, uint16_t val);
+
 #endif

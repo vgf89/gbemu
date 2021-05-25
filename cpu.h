@@ -242,6 +242,17 @@ void ld_hlp_d();
 void ld_hlp_e();
 void ld_hlp_h();
 void ld_hlp_l();
+
+void push_nn(uint16_t nn);
+void push_af();
+void push_bc();
+void push_de();
+void push_hl();
+void pop_rr(uint16_t* rr);
+void pop_af(); // flags (AF)
+void pop_bc();
+void pop_de();
+void pop_hl();
 //    {"halt", 1, null},               // 0x76
 
 void add_a_n(uint8_t n);
@@ -295,7 +306,15 @@ void rra();
 
 void jp_nn(uint16_t address);
 void jp_nc(uint16_t address);
+void jr_nn(int8_t address);
 void jr_nz(int8_t offset);
+void jr_z(int8_t offset);
+void call_nn(uint16_t address);
+void call_nz(uint16_t address);
+void call_nc(uint16_t address);
+void call_z(uint16_t address);
+void call_c(uint16_t address);
+void ret();
 
 
 void undefined();
