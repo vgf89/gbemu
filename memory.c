@@ -13,8 +13,9 @@ uint8_t readChar(uint16_t address)
 void writeChar(uint16_t address, uint8_t val)
 {
     if (address == 0xff02 && val == 0x81) { // Link Port
-        printf("captured Link Cable byte: ");
-        printf("%c\n", (char)readChar(0xff01));
+        //printf("captured Link Cable byte: ");
+        printf("%c", (char)readChar(0xff01));
+        //printf("\n");
         //return; // I assume it's basically discarded if no device is connected?
     }
 
