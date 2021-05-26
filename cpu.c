@@ -498,6 +498,19 @@ void ld_sp_nn(uint16_t value) {
     registers.sp = value;
     
 }
+void ld_hl_spn(int8_t value)
+{
+    reset_flags();
+
+    if (((registers.sp & 0xf) + (value & 0xf)) & 0x10) {
+        FLAGS_SET(FLAGS_HALFCARRY);
+    }
+
+    if (((registers.sp & 0xff) + (value & 0xff)) & 0x100) {
+        FLAGS_SET(FLAGS_CARRY);
+    }
+    registers.hl = registers.sp + value;
+}
 
 
 void ld_a_bcp() {
@@ -927,20 +940,20 @@ void add_a_hlp() {
 void add_hl_nn(uint16_t nn)
 {
 
-    reset_flags();
-    if ((((registers.hl & 0xff) + (nn & 0xff)) & 0x800) == 0x800)
+    FLAGS_CLEAR(FLAGS_NEGATIVE);
+    FLAGS_CLEAR(FLAGS_HALFCARRY);
+    FLAGS_CLEAR(FLAGS_CARRY);
+
+    if ((((registers.hl & 0xfff) + (nn & 0xfff)) & 0x1000) == 0x1000)
     {
         FLAGS_SET(FLAGS_HALFCARRY);
     }
-    if ((((uint16_t)registers.a + (uint16_t)nn) & 0x8000) == 0x8000)
+    if ((((uint32_t)registers.hl + nn) & 0x10000) == 0x10000)
     {
         FLAGS_SET(FLAGS_CARRY);
     }
 
     registers.hl += nn;
-
-    if (registers.a == 0)
-        FLAGS_SET(FLAGS_ZERO);
 }
 void add_hl_bc() {
     add_hl_nn(registers.bc);
@@ -954,7 +967,21 @@ void add_hl_hl() {
 void add_hl_sp() {
     add_hl_nn(registers.sp);
 }
-void add_sp_n();
+
+void add_sp_n(int8_t n) {
+    reset_flags();
+
+    if ((((registers.sp & 0x0f) + (n & 0x0f)) & 0x10) == 0x10)
+    {
+        FLAGS_SET(FLAGS_HALFCARRY);
+    }
+    if ((((registers.sp & 0xff) + (n & 0xff)) & 0x100) == 0x100)
+    {
+        FLAGS_SET(FLAGS_CARRY);
+    }
+
+    registers.sp += n;
+}
 
 void adc_a_n(uint8_t n) {
     uint8_t oldcarryflag = (FLAGS_ISCARRY != 0);
@@ -1452,7 +1479,7 @@ void bit_n_r(uint8_t bit, uint8_t* r)
     FLAGS_SET(FLAGS_HALFCARRY);
 
     FLAGS_CLEAR(FLAGS_ZERO);
-    if ((*r) & (1 << bit)) {
+    if (!((*r) & (1 << bit))) {
         FLAGS_SET(FLAGS_ZERO);
     }
 }
@@ -1462,7 +1489,7 @@ void res_n_r(uint8_t bit, uint8_t* r)
 }
 void set_n_r(uint8_t bit, uint8_t* r)
 {
-    (*r) |= ~(1 << bit);
+    (*r) |= (1 << bit);
 }
 
 

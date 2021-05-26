@@ -173,6 +173,7 @@ void ld_d_n(uint8_t value);
 void ld_a_dep();
 void ld_e_n(uint8_t value);
 void ld_hl_nn(uint16_t value);
+void ld_hl_spn(int8_t value);
 void ldi_hlp_a();
 void ld_h_n(uint8_t value);
 void ldi_a_hlp();
@@ -275,7 +276,7 @@ void add_hl_bc();
 void add_hl_de();
 void add_hl_hl();
 void add_hl_sp();
-void add_sp_n();
+void add_sp_n(int8_t n);
 
 void adc_a_n(uint8_t n);
 void adc_a_a();

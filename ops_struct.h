@@ -249,7 +249,7 @@ const struct instruction instructions[256] = {
     {"PUSH HL", 1, 16, push_hl},               // 0xE5
     {"AND A, 0x%02X", 2, 8, and_n},        // 0xE6
     {"RST 20h", 1, 16, NULL},               // 0xE7
-    {"ADD SP, 0x%02X", 2, 16, NULL},        // 0xE8
+    {"ADD SP, 0x%02X", 2, 16, add_sp_n},        // 0xE8
     {"JP HL", 1, 4, jp_hl},                 // 0xE9
     {"LD (0x%04X), A", 3, 16, ld_nnp_a},    // 0xEA
     {"undefined", 1, 0, undefined},        // 0xEB
@@ -265,7 +265,7 @@ const struct instruction instructions[256] = {
     {"PUSH AF", 1, 16, push_af},               // 0xF5
     {"OR A, 0x%02X", 2, 8, or_n},          // 0xF6
     {"RST 30h", 1, 16, NULL},               // 0xF7
-    {"LD HL, SP + 0x%02X", 2, 12, NULL},    // 0xF8
+    {"LD HL, SP + 0x%02X", 2, 12, ld_hl_spn},    // 0xF8
     {"LD SP, HL", 1, 8, ld_sp_hl},         // 0xF9
     {"LD A, (0x%04X)", 3, 16, ld_a_nnp},    // 0xFA
     {"EI", 1, 4, ei},                      // 0xFB
