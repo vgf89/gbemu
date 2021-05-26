@@ -239,7 +239,7 @@ const struct instruction instructions[256] = {
     {"undefined", 1, 0, undefined},        // 0xDB
     {"CALL C, 0x%04X", 3, 12, call_c},        // 0xDC 12t-24t
     {"undefined", 1, 0, undefined},        // 0xDD
-    {"SBC A, 0x%02X", 2, 8, NULL},         // 0xDE
+    {"SBC A, 0x%02X", 2, 8, sbc_a_n},         // 0xDE
     {"RST 18h", 1, 16, NULL},               // 0xDF
     {"LD (FF00 + 0x%02X), A", 2, 12, ld_np_a}, // 0xE0
     {"POP HL", 1, 12, pop_hl},                // 0xE1

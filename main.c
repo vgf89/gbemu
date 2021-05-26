@@ -49,6 +49,7 @@ int main()
     //--------------------------------------------------------------------------------------
 
     //loadRom("testroms/blarrg/cpu_instrs/individual/01-special.gb");
+    //loadRom("testroms/blarrg/cpu_instrs/individual/02-interrupts.gb");
     //loadRom("testroms/blarrg/cpu_instrs/individual/03-op sp,hl.gb");
     loadRom("testroms/blarrg/cpu_instrs/individual/04-op r,imm.gb");
     //loadRom("testroms/blarrg/cpu_instrs/individual/05-op rp.gb");
