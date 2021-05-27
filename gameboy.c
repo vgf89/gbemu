@@ -6,6 +6,7 @@
 #include "memory.h"
 #include "cpu.h"
 #include "ppu.h"
+#include "timer.h"
 
 // externs
 extern struct registers_t registers;
@@ -102,6 +103,7 @@ void step() {
     // Alternative rate: Super Game Boy 71590 (plus this one's divisible by 4)
     while (clock < MAX_CLOCK)
     {
+        timerStep();
         cpuStep();
         ppuStep();
         clock++; // This could probably just be clock += 2, assuming nothing runs on native clock

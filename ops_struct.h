@@ -72,7 +72,7 @@ const struct instruction instructions[256] = {
     {"INC (HL)", 1, 12, inc_hlp},           // 0x34
     {"DEC (HL)", 1, 12, dec_hlp},           // 0x35
     {"LD (HL), 0x%02X", 2, 12, ld_hlp_n},   // 0x36
-    {"SCF", 1, 4, NULL},                   // 0x37
+    {"SCF", 1, 4, scf},                   // 0x37
     {"JR C, 0x%02X", 2, 8, jr_c},          // 0x38 8t-12t
     {"ADD HL, SP", 1, 8, add_hl_sp},       // 0x39
     {"LDD A,(HL)", 1, 8, ldd_a_hlp},       // 0x3A
@@ -80,7 +80,7 @@ const struct instruction instructions[256] = {
     {"INC A", 1, 4, inc_a},                // 0x3C
     {"DEC A", 1, 4, dec_a},                 // 0x3D
     {"LD A, 0x%02X", 2, 8, ld_a_n},        // 0x3E
-    {"CCF", 1, 4, NULL},                   // 0x3F
+    {"CCF", 1, 4, ccf},                   // 0x3F
     {"LD B, B", 1, 4, ld_b_b},             // 0x40
     {"LD B, C", 1, 4, ld_b_c},             // 0x41
     {"LD B, D", 1, 4, ld_b_d},             // 0x42
@@ -234,7 +234,7 @@ const struct instruction instructions[256] = {
     {"SUB A, 0x%02X", 2, 8, sub_a_n},      // 0xD6
     {"RST 10h", 1, 16, NULL},               // 0xD7
     {"RET C", 1, 8, ret_c},                 // 0xD8 8t-20t
-    {"RETI", 1, 16, NULL},                  // 0xD9
+    {"RETI", 1, 16, reti},                  // 0xD9
     {"JP C, 0x%04X", 3, 12, jp_c},          // 0xDA 12t-24t
     {"undefined", 1, 0, undefined},        // 0xDB
     {"CALL C, 0x%04X", 3, 12, call_c},        // 0xDC 12t-24t

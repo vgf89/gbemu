@@ -77,6 +77,7 @@ void nop();
 
 void di();
 void ei();
+void reti();
 
 void inc_bc();
 void inc_de();
@@ -156,6 +157,8 @@ void cp_hlp();
 
 void daa();
 void cpl();
+void scf();
+void ccf();
 
 void ld_bc_nn(uint16_t value);
 void ld_bcp_a();

@@ -13,7 +13,8 @@ extern uint32_t clock;
 uint32_t cpuclock;
 
 uint8_t IME_flag = 1;
-
+uint8_t set_ei = 0;
+uint8_t res_ei = 0;
 
 
 void reset_cpu_clock(uint16_t maxclock)
@@ -26,6 +27,47 @@ void cpuStep() {
         // Next cpu step shouldn't run yet...
         return;
     }
+
+
+    if (IME_flag) {
+        if (IE_ISSET(I_VBLANK) && IF_ISSET(I_VBLANK)) {
+            IF_CLEAR(I_VBLANK);
+            IME_flag = 0;
+            cpuclock += 20; // This timinig may or may not be right
+            call_nn(0x0040);
+            return;
+        }
+        if (IE_ISSET(I_LCD_STAT) && IF_ISSET(I_LCD_STAT)) {
+            IF_CLEAR(I_LCD_STAT);
+            IME_flag = 0;
+            cpuclock += 20; // This timinig may or may not be right
+            call_nn(0x0048);
+            return;
+        }
+        if (IE_ISSET(I_TIMER) && IF_ISSET(I_TIMER)) {
+            IF_CLEAR(I_TIMER);
+            IME_flag = 0;
+            cpuclock += 20; // This timinig may or may not be right
+            call_nn(0x0050);
+            return;
+        }
+        if (IE_ISSET(I_SERIAL) && IF_ISSET(I_SERIAL)) {
+            IF_CLEAR(I_SERIAL);
+            IME_flag = 0;
+            cpuclock += 20; // This timinig may or may not be right
+            call_nn(0x0058);
+            return;
+        }
+        if (IE_ISSET(I_JOYPAD) && IF_ISSET(I_JOYPAD)) {
+            IF_CLEAR(I_JOYPAD);
+            IME_flag = 0;
+            cpuclock += 20; // This timinig may or may not be right
+            call_nn(0x0060);
+            return;
+        }
+    }
+
+    
     uint8_t opcode = readByte(registers.pc);
     uint16_t operand = 0;
 
@@ -102,8 +144,16 @@ void nop()
 
 void di() {
     IME_flag = 0;
+    //res_ei = 2;
 }
 void ei() {
+    IME_flag = 1;
+    //set_ei = 2;
+}
+void reti()
+{
+    ret();
+    //ei();
     IME_flag = 1;
 }
 
@@ -449,6 +499,23 @@ void cpl()
     FLAGS_SET(FLAGS_HALFCARRY);
 }
 
+void scf()
+{
+    FLAGS_CLEAR(FLAGS_NEGATIVE);
+    FLAGS_CLEAR(FLAGS_HALFCARRY);
+    FLAGS_SET(FLAGS_CARRY);
+}
+
+void ccf()
+{
+    FLAGS_CLEAR(FLAGS_NEGATIVE);
+    FLAGS_CLEAR(FLAGS_HALFCARRY);
+    if (FLAGS_ISCARRY) {
+        FLAGS_CLEAR(FLAGS_CARRY);
+    } else {
+        FLAGS_SET(FLAGS_CARRY);
+    }
+}
 
 
 void ld_a_n(uint8_t value) {

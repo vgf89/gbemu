@@ -27,32 +27,51 @@ union memory_t {
         uint8_t unusable[0x0060];// $fea0-$feff do not touch, just leave it blank unless needed
         union{
             struct{
-                uint8_t controller[0x0001];
-                uint8_t communication[0x0002];
-                uint8_t gap0[0x0001];
-                uint8_t dividerAndTimer[0x0004];
-                uint8_t gap1[0x0008];
-                uint8_t sound[0x0017];
-                uint8_t gap2[0x0009];
-                uint8_t waveformRAM[0x0010];
+                uint8_t JOYPAD; // $ff00
+                uint8_t SIODATA; // $ff01 [RW] Serial I/O Data
+                uint8_t SIOCONT; // $ff02 [RW] Serial I/O Control
+                uint8_t gap0; // $ff03
+                uint8_t DIV; // $ff04 [RW] [meaning unknown]
+                uint8_t TIMA; // $ff05 [RW] Timer Counter (constantly counts up, triggers timer interrupt on overflow)
+                uint8_t TMA; // $ff06 [RW] Timer Modulo (loaded into counter whenever counter overflows)
+                uint8_t TAC; // $ff07 [RW] Timer Control
+                uint8_t gap1[0x0007]; // $ff08-ff0e
+                uint8_t IFLAGS; // $ff0f [RW] Interrupt Flags
+                uint8_t sound[0x0017]; // $ff10-ff26
+                uint8_t gap2[0x0003]; // $ff27-29
+                uint8_t waveformRAM[0x0010]; // $FF30-$FF3F
                 uint8_t LCD[0x000C]; // $ff40-$ff4b
                 uint8_t gap3[0x0003];
-                uint8_t VRAMBankSelect[0x0001]; // CGB
-                uint8_t DisableBootRom[0x0001];
+                uint8_t VRAMBankSelect; // CGB
+                uint8_t DisableBootRom;
                 uint8_t HDMA[0x0017]; // CGB
                 uint8_t gap4[0x000C];
                 uint8_t BCPOCP[0x0002]; // CGB
-                uint8_t WRAMBankSelect[0x0001]; // CGB
+                uint8_t WRAMBankSelect; // CGB
                 uint8_t gap5[0x000F];
             };
-            uint8_t IO[0x0080]; // $f000-$ff7f IO Registers
+            uint8_t IO[0x0080]; // $ff00-$ff7f IO Registers
         };
         
         uint8_t HRAM[0x007F]; // $ff80-$fffe High RAM
-        uint8_t IE[0x0001]; // $ffff Interrupts Enable Register
+        uint8_t IE; // $ffff Interrupts Enable Register
     };
     uint8_t memory[0x10000]; // union
 };
+
+#define I_VBLANK (1)
+#define I_LCD_STAT (1 << 1)
+#define I_TIMER (1 << 2)
+#define I_SERIAL (1 << 3)
+#define I_JOYPAD (1 << 4)
+
+#define IE_ISSET(x) (memory.IE & (x))
+#define IE_SET(x) (memory.IE |= (x))
+#define IE_CLEAR(x) (memory.IE &= ~(x))
+
+#define IF_ISSET(x) (memory.IFLAGS & (x))
+#define IF_SET(x) (memory.IFLAGS |= (x))
+#define IF_CLEAR(x) (memory.IFLAGS &= ~(x))
 
 uint8_t readByte(uint16_t address);
 uint16_t readWord(uint16_t address);

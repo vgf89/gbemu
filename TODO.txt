@@ -2,9 +2,7 @@ General:
 [x] Implmement master clock counter
 
 CPU: 
-[x] Implement cpu timings (just do 1 full cycle per instr)
-    - Run instruction when master clock >= last_master_clock + insr timing
-
+[x] Implement cpu timings
 [ ] Implement CPU interrupts
 
 PPU:
@@ -31,6 +29,6 @@ Passing Tests:
     [x] 06-ld r,r.gb
     [ ] 07-jr,jp,call,ret,rst.gb
     [x] 08-misc instrs.gb
-    [ ] 09-op r,r.gb
+    [x] 09-op r,r.gb
     [x] 10-bit ops.gb
     [x] 11-op a,(hl).gb
