@@ -183,6 +183,8 @@ void ldd_hlp_a();
 void ld_hlp_n(uint8_t value);
 void ldd_a_hlp();
 void ld_a_n(uint8_t value);
+void ld_a_ffcp();
+void ld_ffcp_a();
 
 
 void ld_a_a();  

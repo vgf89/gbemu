@@ -243,7 +243,7 @@ const struct instruction instructions[256] = {
     {"RST 18h", 1, 16, NULL},               // 0xDF
     {"LD (FF00 + 0x%02X), A", 2, 12, ld_np_a}, // 0xE0
     {"POP HL", 1, 12, pop_hl},                // 0xE1
-    {"LD (FF00+C), A", 1, 8, NULL},        // 0xE2
+    {"LD (FF00+C), A", 1, 8, ld_ffcp_a},        // 0xE2
     {"undefined", 1, 0, undefined},        // 0xE3
     {"undefined", 1, 0, undefined},        // 0xE4
     {"PUSH HL", 1, 16, push_hl},               // 0xE5
@@ -259,7 +259,7 @@ const struct instruction instructions[256] = {
     {"RST 28h", 1, 16, NULL},               // 0xEF
     {"LD A, (FF00 + 0x%02X)", 2, 12, ld_a_np}, // 0xF0
     {"POP AF", 1, 12, pop_af},                // 0xF1
-    {"LD A, (FF00 + C)", 1, 8, NULL}, // 0xF2
+    {"LD A, (FF00 + C)", 1, 8, ld_a_ffcp}, // 0xF2
     {"DI", 1, 4, di},                      // 0xF3
     {"undefined", 1, 0, NULL},             // 0xF4
     {"PUSH AF", 1, 16, push_af},               // 0xF5

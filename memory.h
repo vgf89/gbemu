@@ -54,10 +54,10 @@ union memory_t {
     uint8_t memory[0x10000]; // union
 };
 
-uint8_t readChar(uint16_t address);
-uint16_t readShort(uint16_t address);
+uint8_t readByte(uint16_t address);
+uint16_t readWord(uint16_t address);
 
-void writeChar(uint16_t address, uint8_t val);
-void writeShort(uint16_t address, uint16_t val);
+void writeByte(uint16_t address, uint8_t val);
+void writeWord(uint16_t address, uint16_t val);
 
 #endif

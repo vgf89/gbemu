@@ -32,7 +32,7 @@ void ppuStep()
     {
         return;
     }
-    line = readChar(0xff44);
+    line = readByte(0xff44);
 
     switch(mode) {
         case 2: // OAM search for sprite indexes to render
@@ -50,7 +50,7 @@ void ppuStep()
             }
 
             line++;
-            writeChar(0xff44, line); //
+            writeByte(0xff44, line); //
             // Set HBlank interrupt/register/whatever
             // Set ppuclock to end of Mode 0 time
         break;
@@ -63,7 +63,7 @@ void ppuStep()
                 mode = 2;
                 line = 0;
             }
-            writeChar(0xff44, line);
+            writeByte(0xff44, line);
         break;
     }
 

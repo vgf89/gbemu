@@ -26,7 +26,7 @@ void cpuStep() {
         // Next cpu step shouldn't run yet...
         return;
     }
-    uint8_t opcode = readChar(registers.pc);
+    uint8_t opcode = readByte(registers.pc);
     uint16_t operand = 0;
 
     struct instruction ins = instructions[opcode];
@@ -37,37 +37,42 @@ void cpuStep() {
     }
 
 
+
+    if (ins.opcodeLength == 2) operand = (uint16_t)readByte(registers.pc+1);
+    if (ins.opcodeLength == 3) operand = readWord(registers.pc+1);
+
+
     static int bptriggered = 0;
-    if (0 /*registers.pc == 0xc252*/) {
+    if (0){//opcode == 0xde) {
         bptriggered = 1;
-        printf("Breakpoint hit. Press Enter to step execution.\n");
+        printf("0x%04X   Breakpoint hit. Press Enter to step execution.\n", registers.pc);
         fflush(stdout);
     }
 
-    //print_registers();
+    if (bptriggered) print_registers();
 
-    if (ins.opcodeLength == 2) operand = (uint16_t)readChar(registers.pc+1);
-    if (ins.opcodeLength == 3) operand = readShort(registers.pc+1);
-
-    //printf("0x%04X  ", registers.pc);
+    if (bptriggered) printf("0x%04X  0x%02X  ", registers.pc, opcode);
     switch(ins.opcodeLength) {
         case 1:
-            //printf(ins.disas);
-            //printf("\n");
+            if (bptriggered) printf(ins.disas);
+            if (bptriggered) printf("\n");
             break;
         case 2:
-            //printf(ins.disas, operand);
-            //printf("\n");
+            if (bptriggered) printf(ins.disas, operand);
+            if (bptriggered) printf("\n");
             break;
         case 3:
-            //printf(ins.disas, operand);
-            //printf("  (%02x)\n", readChar(operand));
+            if (bptriggered) printf(ins.disas, operand);
+            if (bptriggered) printf("  (%02x)\n", readByte(operand));
             break;
     }
 
     if (bptriggered)
     {
-        getchar();
+        char c ;
+        while ((c = getchar()) != '\n') {
+            if (c == 'c') bptriggered = 0;
+        }
     }
 
 
@@ -285,7 +290,7 @@ void xor_l() {
     set_or_flags();
 }
 void xor_hlp() {
-    registers.a ^= readChar(registers.hl);
+    registers.a ^= readByte(registers.hl);
     set_or_flags();
 }
 void xor_a() {
@@ -299,80 +304,70 @@ void or_n(uint8_t n)
     set_or_flags();
 }
 void or_a() {
-    registers.a |= registers.a;
-    set_or_flags();
+    or_n(registers.a);
 }
 void or_b() {
-    registers.a |= registers.b;
-    set_or_flags();
+    or_n(registers.b);
 }
 void or_c() {
-    registers.a |= registers.c;
-    set_or_flags();
+    or_n(registers.c);
 }
 void or_d() {
-    registers.a |= registers.d;
-    set_or_flags();
+    or_n(registers.d);
 }
 void or_e() {
-    registers.a |= registers.e;
-    set_or_flags();
+    or_n(registers.e);
 }
 void or_h() {
-    registers.a |= registers.h;
-    set_or_flags();
+    or_n(registers.h);
 }
 void or_l() {
-    registers.a |= registers.l;
-    set_or_flags();
+    or_n(registers.l);
 }
 void or_hlp() {
-    registers.a |= readChar(registers.hl);
+    or_n(readByte(registers.hl));
 }
 
 void and_n(uint8_t n)
 {
     registers.a &= n;
-    set_or_flags();
+    reset_flags();
+    if (registers.a == 0) {
+        FLAGS_SET(FLAGS_ZERO);
+    }
+    FLAGS_SET(FLAGS_HALFCARRY); // Why is this always set?
 }
 void and_a()
 {
-    registers.a &= registers.a;
-    set_or_flags();
+    and_n(registers.a);
 }
 void and_b()
 {
-    registers.a &= registers.b;
-    set_or_flags();
+    and_n(registers.b);
 }
 void and_c()
 {
-    registers.a &= registers.c;
-    set_or_flags();
+    and_n(registers.c);
 }
 void and_d()
 {
-    registers.a &= registers.d;
-    set_or_flags();
+    and_n(registers.d);
 }
 void and_e()
 {
-    registers.a &= registers.e;
-    set_or_flags();
+    and_n(registers.e);
 }
 void and_h()
 {
-    registers.a &= registers.h;
-    set_or_flags();
+    and_n(registers.h);
 }
 void and_l()
 {
-    registers.a &= registers.l;
-    set_or_flags();
+    and_n(registers.l);
 }
 void and_hlp()
 {
-    registers.a &= readChar(registers.hl);
+    and_n(readByte(registers.hl));
 }
 
 void cp_n(uint8_t n)
@@ -386,10 +381,10 @@ void cp_n(uint8_t n)
     {
         FLAGS_SET(FLAGS_CARRY);
     }
-    //if (registers.a == n) {
-    //    FLAGS_SET(FLAGS_ZERO);
-    //}
-    FLAGS_SET(FLAGS_ZERO); // This seems wrong, but it passes? wtf?
+    if (registers.a == n) {
+        FLAGS_SET(FLAGS_ZERO);
+    }
+    FLAGS_SET(FLAGS_NEGATIVE);
 }
 
 void cp_a() {
@@ -516,66 +511,76 @@ void ld_hl_spn(int8_t value)
 
 
 void ld_a_bcp() {
-    registers.a = readChar(registers.bc);
+    registers.a = readByte(registers.bc);
 }
 void ld_a_dep() {
-    registers.a = readChar(registers.de);
+    registers.a = readByte(registers.de);
     
 }
 void ld_bcp_a() {
-    writeChar(registers.bc, registers.a);
+    writeByte(registers.bc, registers.a);
     
 }
 void ld_dep_a()
 {
-    writeChar(registers.de, registers.a);
+    writeByte(registers.de, registers.a);
 }
 
 void ld_hlp_n(uint8_t value) {
-    writeChar(registers.hl, value);
+    writeByte(registers.hl, value);
     
 }
 
 
 void ldi_hlp_a() {
-    writeChar(registers.hl, registers.a);
+    writeByte(registers.hl, registers.a);
     registers.hl++;
     
 }
 void ldi_a_hlp() {
-    registers.a = readChar(registers.hl);
+    registers.a = readByte(registers.hl);
     registers.hl++;
     
 }
 
 void ldd_hlp_a() {
-    writeChar(registers.hl, registers.a);
+    writeByte(registers.hl, registers.a);
     registers.hl--;
     
 }
 void ldd_a_hlp() {
-    registers.a = readChar(registers.hl);
+    registers.a = readByte(registers.hl);
     registers.hl--;
     
 }
 
 
 void ld_nnp_sp(uint16_t address) {
-    writeShort(address, registers.sp);
+    writeWord(address, registers.sp);
 }
 void ld_nnp_a(uint16_t address) {
-    writeChar(address, registers.a);
+    writeByte(address, registers.a);
 }
 void ld_a_nnp(uint16_t address) {
-    registers.a = readChar(address);
+    registers.a = readByte(address);
 }
 void ld_np_a(uint8_t address)
 {
-    writeChar(0xFF00 + address, registers.a);
+    writeByte(0xFF00 + address, registers.a);
 }
 void ld_a_np(uint8_t address)
 {
-    registers.a = readChar(0xFF00 + address);
+    registers.a = readByte(0xff00 + address);
+}
+
+void ld_a_ffcp()
+{
+    ld_a_n(readByte(0xff00 + registers.c));
+}
+
+void ld_ffcp_a()
+{
+    writeByte(0xff00 + registers.c, registers.a);
 }
 
 void ld_a_a() {
@@ -840,7 +845,7 @@ void ld_hlp_l() {
 void push_nn(uint16_t nn)
 {
     registers.sp -= 2;
-    writeShort(registers.sp, nn);
+    writeWord(registers.sp, nn);
 }
 
 void push_af()
@@ -865,7 +870,7 @@ void push_hl()
 
 void pop_rr(uint16_t *rr)
 {
-    (*rr) = readShort(registers.sp);
+    (*rr) = readWord(registers.sp);
     registers.sp += 2;
 }
 
@@ -987,17 +992,20 @@ void add_sp_n(int8_t n) {
 
 void adc_a_n(uint8_t n) {
     uint8_t oldcarryflag = (FLAGS_ISCARRY != 0);
+    uint8_t half_result = (registers.a & 0xf) +  (n & 0xf) + oldcarryflag;
+    uint16_t full_result = registers.a + n + oldcarryflag;
+    registers.a = (uint8_t)full_result; // Cast truncates the overflow bits
     reset_flags();
-    if ((((registers.a & 0xf) + (n & 0xf) + oldcarryflag) & 0x10) == 0x10)
-    {
+
+    if (half_result > 0xf) {
         FLAGS_SET(FLAGS_HALFCARRY);
     }
-    if ((((uint16_t)registers.a + (uint16_t)n + (uint16_t)oldcarryflag) & 0x100) == 0x100)
-    {
+    if (full_result > 0xff) { 
         FLAGS_SET(FLAGS_CARRY);
     }
-    registers.a += n + oldcarryflag;
-    if (registers.a == 0) FLAGS_SET(FLAGS_ZERO);
+    if (registers.a == 0) {
+        FLAGS_SET(FLAGS_ZERO);
+    }
 }
 
 void adc_a_a() {
@@ -1041,6 +1049,8 @@ void sub_a_n(uint8_t n)
 
     if (registers.a == 0)
         FLAGS_SET(FLAGS_ZERO);
+
+    FLAGS_SET(FLAGS_NEGATIVE);
 }
 
 void sub_a_a() {
@@ -1070,7 +1080,22 @@ void sub_a_hlp() {
 
 
 void sbc_a_n(uint8_t n) {
-    sub_a_n(n);
+    // NOTE: Carry flags are set on overflow, no matter what.
+    uint8_t oldcarryflag = (FLAGS_ISCARRY != 0);
+    uint8_t half_result = (registers.a & 0xf) -  (n & 0xf) - oldcarryflag;
+    uint16_t full_result = registers.a - n - oldcarryflag;
+    registers.a = (uint8_t)full_result; // Cast truncates the overflow bits
+    reset_flags();
+    FLAGS_SET(FLAGS_NEGATIVE);
+    if (half_result > 0xf) {
+        FLAGS_SET(FLAGS_HALFCARRY);
+    }
+    if (full_result > 0xff) {
+        FLAGS_SET(FLAGS_CARRY);
+    }
+    if (registers.a == 0) {
+        FLAGS_SET(FLAGS_ZERO);
+    }
 }
 
 void sbc_a_a() {
@@ -1214,7 +1239,7 @@ void jr_z(int8_t offset)
 void call_nn(uint16_t address)
 {
     registers.sp -= 2;
-    writeShort(registers.sp, registers.pc);
+    writeWord(registers.sp, registers.pc);
     registers.pc = address;
 }
 
@@ -1254,7 +1279,7 @@ void call_c(uint16_t address)
 }
 
 void ret(){
-    registers.pc = readShort(registers.sp);
+    registers.pc = readWord(registers.sp);
     registers.sp += 2;
 }
 
@@ -1788,7 +1813,7 @@ void set_7_hlp() { set_n_r(7, &memory.memory[registers.hl]); }
 
 void undefined() {
     registers.pc--;
-    printf("0x%04X  0x%02X  \n", registers.pc, readChar(registers.pc));
+    printf("0x%04X  0x%02X  \n", registers.pc, readByte(registers.pc));
     exit(1);// ???? do we just NOP?
 }
 
@@ -1816,9 +1841,9 @@ void print_byte_bits(uint8_t b)
 
 void print_registers()
 {
-    printf("  AF: %04X       \n  BC: %04X  (%02x)\n", registers.af, registers.bc, readChar(registers.bc));
-    printf("  DE: %04X  (%02x)\n  HL: %04X  (%02x)\n", registers.de, readChar(registers.de),  registers.hl, readChar(registers.hl));
-    printf("  SP: %04X  (%02x)\n  PC: %04X\n", registers.sp, readChar(registers.sp), registers.pc);
+    printf("  AF: %04X       \n  BC: %04X  (%02x)\n", registers.af, registers.bc, readByte(registers.bc));
+    printf("  DE: %04X  (%02x)\n  HL: %04X  (%02x)\n", registers.de, readByte(registers.de),  registers.hl, readByte(registers.hl));
+    printf("  SP: %04X  (%02x)\n  PC: %04X\n", registers.sp, readByte(registers.sp), registers.pc);
 
     printf("  F: 0b");
     print_byte_bits(registers.f);
