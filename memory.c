@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "memory.h"
+#include "timer.h"
 
 union memory_t memory = {0};
 
@@ -19,7 +20,12 @@ void writeByte(uint16_t address, uint8_t val)
         //return; // I assume it's basically discarded if no device is connected?
     }
 
-    memory.memory[address] = val;
+    if (&memory.memory[address] == &memory.DIV) {
+        resetDIV();
+
+    } else {
+        memory.memory[address] = val;
+    }
 }
 
 

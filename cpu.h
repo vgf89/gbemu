@@ -78,6 +78,7 @@ void nop();
 void di();
 void ei();
 void reti();
+void halt();
 
 void inc_bc();
 void inc_de();

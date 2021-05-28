@@ -16,6 +16,9 @@ uint8_t IME_flag = 1;
 uint8_t set_ei = 0;
 uint8_t res_ei = 0;
 
+uint8_t halted = 0;
+uint8_t halt_bug = 0;
+
 
 void reset_cpu_clock(uint16_t maxclock)
 {
@@ -31,47 +34,73 @@ void cpuStep() {
 
     if (IME_flag) {
         if (IE_ISSET(I_VBLANK) && IF_ISSET(I_VBLANK)) {
-            IF_CLEAR(I_VBLANK);
-            IME_flag = 0;
             cpuclock += 20; // This timinig may or may not be right
-            call_nn(0x0040);
+            if (halted || IME_flag) {
+                halted = 0;
+                IF_CLEAR(I_VBLANK);
+                IME_flag = 0;
+                call_nn(0x0040);
+            }
+            halted = 0;
             return;
         }
-        if (IE_ISSET(I_LCD_STAT) && IF_ISSET(I_LCD_STAT)) {
-            IF_CLEAR(I_LCD_STAT);
-            IME_flag = 0;
+        else if (IE_ISSET(I_LCD_STAT) && IF_ISSET(I_LCD_STAT)) {
             cpuclock += 20; // This timinig may or may not be right
-            call_nn(0x0048);
+            if (halted || IME_flag) {
+                halted = 0;
+                IF_CLEAR(I_LCD_STAT);
+                IME_flag = 0;
+                call_nn(0x0048);
+            }
+            halted = 0;
             return;
         }
-        if (IE_ISSET(I_TIMER) && IF_ISSET(I_TIMER)) {
-            IF_CLEAR(I_TIMER);
-            IME_flag = 0;
-            cpuclock += 20; // This timinig may or may not be right
-            call_nn(0x0050);
+        else if (IE_ISSET(I_TIMER) && IF_ISSET(I_TIMER)) {
+            cpuclock += 20; // This timing may or may not be right
+            if (halted || IME_flag) {
+                halted = 0;
+                IF_CLEAR(I_TIMER);
+                IME_flag = 0;
+                call_nn(0x0050);
+            }
+
             return;
         }
-        if (IE_ISSET(I_SERIAL) && IF_ISSET(I_SERIAL)) {
-            IF_CLEAR(I_SERIAL);
-            IME_flag = 0;
+        else if (IE_ISSET(I_SERIAL) && IF_ISSET(I_SERIAL)) {
             cpuclock += 20; // This timinig may or may not be right
-            call_nn(0x0058);
+            if (halted || IME_flag) {
+                halted = 0;
+                IF_CLEAR(I_SERIAL);
+                IME_flag = 0;
+                call_nn(0x0058);
+            }
+            halted = 0;
             return;
         }
-        if (IE_ISSET(I_JOYPAD) && IF_ISSET(I_JOYPAD)) {
-            IF_CLEAR(I_JOYPAD);
-            IME_flag = 0;
+        else if (IE_ISSET(I_JOYPAD) && IF_ISSET(I_JOYPAD)) {
             cpuclock += 20; // This timinig may or may not be right
-            call_nn(0x0060);
+            if (halted || IME_flag) {
+                halted = 0;
+                IF_CLEAR(I_JOYPAD);
+                IME_flag = 0;
+                call_nn(0x0060);
+            }
+            halted = 0;
             return;
         }
     }
 
+    else if (halted) {
+        // Halted, but resumes execution on interrupt instead since IME == 0
+        if (IF_ISSET(I_VBLANK) || IF_ISSET(I_LCD_STAT) || IF_ISSET(I_SERIAL) || IF_ISSET(I_TIMER) || IF_ISSET(I_JOYPAD)) {
+            halted = 0;
+        }
+    }
     
     uint8_t opcode = readByte(registers.pc);
-    uint16_t operand = 0;
-
     struct instruction ins = instructions[opcode];
+
+    uint16_t operand = 0;
 
     if (ins.execute == NULL) {
         unimplemented(opcode);
@@ -79,13 +108,12 @@ void cpuStep() {
     }
 
 
-
     if (ins.opcodeLength == 2) operand = (uint16_t)readByte(registers.pc+1);
     if (ins.opcodeLength == 3) operand = readWord(registers.pc+1);
 
 
     static int bptriggered = 0;
-    if (0){//opcode == 0xde) {
+    if (0){//opcode == 0x76) {
         bptriggered = 1;
         printf("0x%04X   Breakpoint hit. Press Enter to step execution.\n", registers.pc);
         fflush(stdout);
@@ -117,8 +145,19 @@ void cpuStep() {
         }
     }
 
+    if (halt_bug) {
+        halt_bug = 0;
+    } else {
+        if (!halted) {
+            registers.pc += ins.opcodeLength;
+        }
+    }
 
-    registers.pc += ins.opcodeLength;
+    if (halted)
+    {
+        cpuclock += 4;
+        return;
+    }
 
     cpuclock += ins.cycles;
 
@@ -155,6 +194,23 @@ void reti()
     ret();
     //ei();
     IME_flag = 1;
+}
+
+void halt() {
+    if (IME_flag) {
+        halted = 1;
+    } else {
+        if ((memory.IE & memory.IFLAGS & 0x1f) == 0) {
+            halted = 1;
+            // Halt mode is entered, but the interupt vector is not called
+            // and IF isn't cleared (it instead just continue executing when an interrupt is received)
+            // Can check this via (halted && (IME_flag == 0))
+        } else {
+            // Halt mode is not entered.
+            // CPU does not increase pc on next instruction. IF flags aren't cleared
+            halt_bug = 1;
+        }
+    }
 }
 
 void reset_inc_flags()
@@ -1915,4 +1971,8 @@ void print_registers()
     printf("  F: 0b");
     print_byte_bits(registers.f);
     printf("\n");
+    printf("  Halted: %01X\n", halted);
+    printf("  haltbug: %01X\n", halt_bug);
+    printf("  IME: %01X\n", IME_flag);
+    printf("  IE: %02X\n  IF: %02X\n", memory.IE, memory.IFLAGS);
 }

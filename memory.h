@@ -31,7 +31,7 @@ union memory_t {
                 uint8_t SIODATA; // $ff01 [RW] Serial I/O Data
                 uint8_t SIOCONT; // $ff02 [RW] Serial I/O Control
                 uint8_t gap0; // $ff03
-                uint8_t DIV; // $ff04 [RW] [meaning unknown]
+                uint8_t DIV; // $ff04 [RW] Unconditional counter register (increases every 256 system clock)
                 uint8_t TIMA; // $ff05 [RW] Timer Counter (constantly counts up, triggers timer interrupt on overflow)
                 uint8_t TMA; // $ff06 [RW] Timer Modulo (loaded into counter whenever counter overflows)
                 uint8_t TAC; // $ff07 [RW] Timer Control

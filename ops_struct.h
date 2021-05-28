@@ -135,7 +135,7 @@ const struct instruction instructions[256] = {
     {"LD (HL), E", 1, 8, ld_hlp_e},        // 0x73
     {"LD (HL), H", 1, 8, ld_hlp_h},        // 0x74
     {"LD (HL), L", 1, 8, ld_hlp_l},        // 0x75
-    {"HALT", 1, 4, NULL},                  // 0x76
+    {"HALT", 1, 4, halt},                  // 0x76
     {"LD (HL), A", 1, 8, ld_hlp_a},        // 0x77
     {"LD A, B", 1, 4, ld_a_b},             // 0x78
     {"LD A, C", 1, 4, ld_a_c},             // 0x79
