@@ -216,7 +216,7 @@ const struct instruction instructions[256] = {
     {"CALL NZ", 3, 12, call_nz},               // 0xC4 12t-24t
     {"PUSH BC", 1, 16, push_bc},               // 0xC5
     {"ADD A, 0x%02X", 2, 8, add_a_n},      // 0xC6
-    {"RST 00h", 1, 16, NULL},               // 0xC7
+    {"RST 00h", 1, 16, rst00},               // 0xC7
     {"RET Z", 1, 8, ret_z},                 // 0xC8 8t-20t
     {"RET", 1, 16, ret},                   // 0xC9
     {"JP Z, 0x%04X", 3, 12, jp_z},          // 0xCA 12t-16t
@@ -224,7 +224,7 @@ const struct instruction instructions[256] = {
     {"CALL Z, 0x%04X", 3, 12, call_z},        // 0xCC 12t-24t
     {"CALL 0x%04X", 3, 24, call_nn},           // 0xCD
     {"ADC A, 0x%02X", 2, 8, adc_a_n},         // 0xCE
-    {"RST 08h", 1, 16, NULL},               // 0xCF
+    {"RST 08h", 1, 16, rst08},               // 0xCF
     {"RET NC", 1, 8, ret_nc},                // 0xD0 8t-20t
     {"POP DE", 1, 12, pop_de},                // 0xD1
     {"JP NC, 0x%04X", 3, 12, jp_nc},        // 0xD2 12t-16t
@@ -232,7 +232,7 @@ const struct instruction instructions[256] = {
     {"CALL NC, 0x%04X", 3, 12, call_nc},       // 0xD4 12t-24t
     {"PUSH DE", 1, 16, push_de},               // 0xD5
     {"SUB A, 0x%02X", 2, 8, sub_a_n},      // 0xD6
-    {"RST 10h", 1, 16, NULL},               // 0xD7
+    {"RST 10h", 1, 16, rst10},               // 0xD7
     {"RET C", 1, 8, ret_c},                 // 0xD8 8t-20t
     {"RETI", 1, 16, reti},                  // 0xD9
     {"JP C, 0x%04X", 3, 12, jp_c},          // 0xDA 12t-24t
@@ -240,7 +240,7 @@ const struct instruction instructions[256] = {
     {"CALL C, 0x%04X", 3, 12, call_c},        // 0xDC 12t-24t
     {"undefined", 1, 0, undefined},        // 0xDD
     {"SBC A, 0x%02X", 2, 8, sbc_a_n},         // 0xDE
-    {"RST 18h", 1, 16, NULL},               // 0xDF
+    {"RST 18h", 1, 16, rst18},               // 0xDF
     {"LD (FF00 + 0x%02X), A", 2, 12, ld_np_a}, // 0xE0
     {"POP HL", 1, 12, pop_hl},                // 0xE1
     {"LD (FF00+C), A", 1, 8, ld_ffcp_a},        // 0xE2
@@ -248,7 +248,7 @@ const struct instruction instructions[256] = {
     {"undefined", 1, 0, undefined},        // 0xE4
     {"PUSH HL", 1, 16, push_hl},               // 0xE5
     {"AND A, 0x%02X", 2, 8, and_n},        // 0xE6
-    {"RST 20h", 1, 16, NULL},               // 0xE7
+    {"RST 20h", 1, 16, rst20},               // 0xE7
     {"ADD SP, 0x%02X", 2, 16, add_sp_n},        // 0xE8
     {"JP HL", 1, 4, jp_hl},                 // 0xE9
     {"LD (0x%04X), A", 3, 16, ld_nnp_a},    // 0xEA
@@ -256,7 +256,7 @@ const struct instruction instructions[256] = {
     {"undefined", 1, 0, undefined},        // 0xEC
     {"undefined", 1, 0, undefined},        // 0xED
     {"XOR A, 0x%02X", 2, 8, xor_n},        // 0xEE
-    {"RST 28h", 1, 16, NULL},               // 0xEF
+    {"RST 28h", 1, 16, rst28},               // 0xEF
     {"LD A, (FF00 + 0x%02X)", 2, 12, ld_a_np}, // 0xF0
     {"POP AF", 1, 12, pop_af},                // 0xF1
     {"LD A, (FF00 + C)", 1, 8, ld_a_ffcp}, // 0xF2
@@ -264,7 +264,7 @@ const struct instruction instructions[256] = {
     {"undefined", 1, 0, NULL},             // 0xF4
     {"PUSH AF", 1, 16, push_af},               // 0xF5
     {"OR A, 0x%02X", 2, 8, or_n},          // 0xF6
-    {"RST 30h", 1, 16, NULL},               // 0xF7
+    {"RST 30h", 1, 16, rst30},               // 0xF7
     {"LD HL, SP + 0x%02X", 2, 12, ld_hl_spn},    // 0xF8
     {"LD SP, HL", 1, 8, ld_sp_hl},         // 0xF9
     {"LD A, (0x%04X)", 3, 16, ld_a_nnp},    // 0xFA
@@ -272,7 +272,7 @@ const struct instruction instructions[256] = {
     {"undefined", 1, 0, undefined},        // 0xFC
     {"undefined", 1, 0, undefined},        // 0xFD
     {"CP A, 0x%02X", 2, 8, cp_n},          // 0xFE
-    {"RST 38h", 1, 16, NULL}                // 0xFF
+    {"RST 38h", 1, 16, rst38}                // 0xFF
 };
 
 

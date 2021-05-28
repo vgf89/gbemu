@@ -1434,7 +1434,37 @@ void ret_nz() {
     }
 }
 
+void rst00() {
+    call_nn(0x00);
+}
 
+void rst08() {
+    call_nn(0x08);
+}
+
+void rst10() {
+    call_nn(0x10);
+}
+
+void rst18() {
+    call_nn(0x18);
+}
+
+void rst20() {
+    call_nn(0x20);
+}
+
+void rst28() {
+    call_nn(0x28);
+}
+
+void rst30() {
+    call_nn(0x30);
+}
+
+void rst38() {
+    call_nn(0x38);
+}
 
 
 void cb(uint8_t opcode)

@@ -341,6 +341,15 @@ void ret_nc();
 void ret_z();
 void ret_nz();
 
+void rst00();
+void rst08();
+void rst10();
+void rst18();
+void rst20();
+void rst28();
+void rst30();
+void rst38();
+
 
 
 
