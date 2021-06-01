@@ -27,6 +27,7 @@
 PROJECT_NAME       ?= gbemu
 RAYLIB_VERSION     ?= 3.5.0
 RAYLIB_PATH        ?= C:/raylib/raylib
+RAYGUI_PATH        ?= C:/raylib/raygui-2.6
 
 # Define compiler path on Windows
 COMPILER_PATH      ?= C:/raylib/mingw/bin
@@ -251,7 +252,7 @@ endif
 
 # Define include paths for required headers
 # NOTE: Several external required libraries (stb and others)
-INCLUDE_PATHS = -I. -I$(RAYLIB_PATH)/src -I$(RAYLIB_PATH)/src/external
+INCLUDE_PATHS = -I. -I$(RAYLIB_PATH)/src -I$(RAYLIB_PATH)/src/external -I$(RAYGUI_PATH)/src
 
 # Define additional directories containing required header files
 ifeq ($(PLATFORM),PLATFORM_RPI)

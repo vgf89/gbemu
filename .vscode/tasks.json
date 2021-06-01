@@ -13,8 +13,9 @@
                 "command": "C:/raylib/mingw/bin/mingw32-make.exe",
                 "args": [
                     "RAYLIB_PATH=C:/raylib/raylib",
+                    "RAYGUI_PATH=C:/raylib/raygui-2.6",
                     "PROJECT_NAME=gbemu",
-                    "OBJS=main.c cpu.c memory.c",
+                    "OBJS=main.c gameboy.c cpu.c memory.c ppu.c timer.c",
                     "BUILD_MODE=DEBUG"
                 ]
             },
@@ -22,7 +23,7 @@
                 "args": [
                     "RAYLIB_PATH=<path_to_raylib>/raylib",
                     "PROJECT_NAME=gbemu",
-                    "OBJS=main.c cpu.c memory.c",
+                    "OBJS=main.c gameboy.c cpu.c memory.c ppu.c timer.c",
                     "BUILD_MODE=DEBUG"
                 ]
             },
@@ -42,15 +43,16 @@
                 "command": "C:/raylib/mingw/bin/mingw32-make.exe",
                 "args": [
                     "RAYLIB_PATH=C:/raylib/raylib",
+                    "RAYGUI_PATH=C:/raylib/raygui-2.6",
                     "PROJECT_NAME=gbemu",
-                    "OBJS=main.c gameboy.c cpu.c memory.c ppu.c",
+                    "OBJS=main.c gameboy.c cpu.c memory.c ppu.c timer.c",
                 ]
             },
             "osx": {
                 "args": [
                     "RAYLIB_PATH=<path_to_raylib>/raylib",
                     "PROJECT_NAME=gbemu",
-                    "OBJS=main.c gameboy.c cpu.c memory.c ppu.c",
+                    "OBJS=main.c gameboy.c cpu.c memory.c ppu.c timer.c",
                 ]
             },
             "group": "build",

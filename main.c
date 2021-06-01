@@ -20,8 +20,13 @@
 ********************************************************************************************/
 
 #include <stdio.h>
-//#include "raylib.h"
+#include "raylib.h"
 #include "gameboy.h"
+#include "ppu.h"
+
+#define RAYGUI_IMPLEMENTATION
+#include "raygui.h"
+#undef RAYGUI_IMPLEMENTATION
 
 extern struct registers_t registers;
 
@@ -32,7 +37,7 @@ int main()
     const int screenWidth = 400;//160;
     const int screenHeight = 400;//144;
 
-    //InitWindow(screenWidth, screenHeight, "raylib");
+    InitWindow(screenWidth, screenHeight, "raylib");
 
     //Camera camera = { 0 };
     //camera.position = (Vector3){ 10.0f, 10.0f, 8.0f };
@@ -48,26 +53,49 @@ int main()
     //SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
 
-    //loadRom("testroms/blarrg/cpu_instrs/individual/01-special.gb");
+    loadRom("testroms/blarrg/cpu_instrs/individual/01-special.gb");
     //loadRom("testroms/blarrg/cpu_instrs/individual/02-interrupts.gb");
     //loadRom("testroms/blarrg/cpu_instrs/individual/03-op sp,hl.gb");
     //loadRom("testroms/blarrg/cpu_instrs/individual/04-op r,imm.gb");
     //loadRom("testroms/blarrg/cpu_instrs/individual/05-op rp.gb");
     //loadRom("testroms/blarrg/cpu_instrs/individual/06-ld r,r.gb");
-    loadRom("testroms/blarrg/cpu_instrs/individual/07-jr,jp,call,ret,rst.gb");
+    //loadRom("testroms/blarrg/cpu_instrs/individual/07-jr,jp,call,ret,rst.gb");
     //loadRom("testroms/blarrg/cpu_instrs/individual/08-misc instrs.gb");
     //loadRom("testroms/blarrg/cpu_instrs/individual/09-op r,r.gb");
     //loadRom("testroms/blarrg/cpu_instrs/individual/10-bit ops.gb");
     //loadRom("testroms/blarrg/cpu_instrs/individual/11-op a,(hl).gb");
 
     //loadRom("testroms/games/Tetris\ (World)\ (Rev A).gb");
-    //loadRom("testroms/games/Dr.\ Mario(JU)\ (V1.1).gb");
+    //loadRom("testroms/games/Dr.\ Mario\ (World)\ (Rev 1).gb");
 
     reset(); // Initialize gameboy state
 
+
+    
+    Image tileset_image = {
+        .data = TileData(),
+        .width = 128,
+        .height = 192,
+        .format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8,
+        .mipmaps = 1
+    };
+    
+    Texture2D tileset = LoadTextureFromImage(tileset_image);
+
+
+    Image bg_image = {
+        .data = BG(),
+        .width = 256,
+        .height = 256,
+        .format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8,
+        .mipmaps = 1
+    };
+    Texture2D bg = LoadTextureFromImage(bg_image);
+
+
     printf("\n\n");
     // Main game loop
-    while (1)//!WindowShouldClose())    // Detect window close button or ESC key
+    while (!WindowShouldClose())    // Detect window close button or ESC key
     {
         // Update
         //----------------------------------------------------------------------------------
@@ -78,9 +106,24 @@ int main()
 
         // Draw
         //----------------------------------------------------------------------------------
-        /*BeginDrawing();
+        BeginDrawing();
 
             ClearBackground(RAYWHITE);
+            
+
+            UpdateTexture(tileset, TileData());
+            UpdateTexture(bg, BG());
+
+            GuiGroupBox((Rectangle){6, 6, tileset.width + 2, tileset.height + 5}, "VRAM $8000-$97FF");
+            DrawTexture(tileset, 7, 10, WHITE);
+
+            GuiGroupBox((Rectangle){6+132, 6, bg.width + 2, bg.height + 5}, "BG $9800-$9BFF");
+            DrawTexture(bg, 7+132, 10, WHITE);
+
+
+
+
+            /*
 
             char buff[256];
 
@@ -99,14 +142,19 @@ int main()
 
             DrawFPS(10, 350);
 
+            */
 
-        EndDrawing();*/
+           char str[10];
+           DrawText(itoa(GetFPS(),str,10),0, 0, 5, RED);
+
+
+        EndDrawing();
         //----------------------------------------------------------------------------------
     }
 
     // De-Initialization
     //--------------------------------------------------------------------------------------
-    //CloseWindow();        // Close window and OpenGL context
+    CloseWindow();        // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
 
     return 0;

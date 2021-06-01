@@ -11,6 +11,9 @@
 	"files.associations": {
 		"*.toml": "toml",
 		"ppu.h": "c",
-		"*.m": "c"
+		"*.m": "c",
+		"memory.h": "c",
+		"*.tcc": "c",
+		"type_traits": "c"
 	}
 }

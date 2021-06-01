@@ -3,15 +3,17 @@
 
 #include "ppu.h"
 #include "memory.h"
+#include <stdlib.h>
 
 uint8_t LCD[144][160];
+extern union memory_t memory;
 
 extern uint32_t clock;
 uint32_t ppuclock;
 
 uint8_t line = 0;
 
-int mode = 2;
+uint8_t mode = 2;
 /* Modes:
 2: 80 dots.   Searching OAM for OBJs that render on this line. VRAM unlocked.
 3: 168-291 dots depending on sprite count. Reading OAM and VRAM to generate picture. Locks VRAM, OAM, CGB Palette.
@@ -21,9 +23,118 @@ int mode = 2;
 Total dot count: (80 + 376) * 144 + 4560 = 70224
 */
 
+
+Color *tiles_pixels1;
+
+void init_ppu()
+{
+    tiles_pixels1 = (Color*)malloc(128*192*sizeof(Color));
+}
+
+uint8_t lastLYCStatInterruptFlag = 0;
+uint8_t lastMode0InterruptFlag = 0;
+uint8_t lastMode1InterruptFlag = 0;
+uint8_t lastMode2InterruptFlag = 0;
+
 void reset_ppu_clock(uint16_t maxclock)
 {
     ppuclock -= maxclock;
+}
+
+void updateLCDStatus()
+{
+    uint8_t result = 0;
+    result |= mode;
+    if (LY == LYC) {
+        result |= (1 << 2);
+    }
+    result |= STAT & 0x3c;
+
+    writeByte(0xff41, result);
+
+    // TODO: Trigger STAT interrupts : Check for changes to interrupt sources in cpu.c
+
+}
+
+// Returns an array of pixels. 128x192 (16x24 tiles)
+Color* TileData()
+{
+    
+    // VRAM Tile Data:
+    // Block    VRAM Address        Corresponding Tile IDs
+    //                              OBJs        BG/Win if LCDC.4=1      BG/Win if LCDC.4=0
+    // 0        $8000–$87FF 	    0–127 	    0–127
+    // 1 	    $8800–$8FFF         128–255     128–255                 128–255 (or -127–0) 
+    // 2        $9000–$97FF         (          Can't use         )      0-127
+    
+    // Each tile occupied 16 bytes, where each line is represented by 2 bytes:
+    // Byte 0-1  Topmost line (Top 8 pixels)
+    // Byte 2-3  Second Line
+    // etc...
+    // Each pixel is defined by 2 bits, stacked on top of each other
+
+    // Loop tiles
+    for (uint16_t tile = 0; tile < 0x180; tile++) {
+        // Loop y (2 bytes at a time)
+        for (uint16_t y = 0; y < 8; y++) {
+            uint8_t byte1 = memory.memory[0x8000 + tile * 16 + y * 2];
+            uint8_t byte2 = memory.memory[0x8000 + tile * 16 + y * 2 + 1];
+            // Loop x bits
+            for (uint8_t x = 0; x < 8; x++) {
+                char value = (((byte1 & (1 << (7 - x)))?0:1) << 1) | (((byte2 & (1 << (7 - x)))?0:1));
+                value *= 85; // Map values to simple rgb values
+                // TODO: Palette implementation
+
+                // TODO: There HAS to be a cleaner way to do this
+                // that makes the target resolution dependencies obvious
+                uint16_t finalx = (tile%16)*8 + x;
+                uint16_t finaly = (tile/16)*0x400 + y*0x80;
+                
+                uint16_t pixel2 = finaly + finalx;
+                tiles_pixels1[pixel2].a = 255;
+                tiles_pixels1[pixel2].r = value;
+                tiles_pixels1[pixel2].g = value;
+                tiles_pixels1[pixel2].b = value;
+            }
+        }
+    }
+
+    return tiles_pixels1;
+}
+
+Color bg_render[256][256] = {0};
+// Background and Window maps are 32x32 tiles. Memory area $9800-$9BFF or $9C00-$9FFF
+// Returns pixel array of 256x256
+Color* BG()
+{
+    for (uint16_t tile = 0; tile < 0x400; tile++) {
+        uint16_t tile_x = (tile % 32)*8; // top-left position of tile in tiles_bg
+        uint16_t tile_y = (tile / 32)*8;
+
+        for (uint16_t y = 0; y < 8; y++) { // 
+            uint8_t byte1 = memory.memory[0x9800 + tile * 16 + y * 2];
+            uint8_t byte2 = memory.memory[0x9800 + tile * 16 + y * 2 + 1];
+            for (uint8_t x = 0; x < 8; x++) {
+                char value = (((byte1 & (1 << (7 - x)))?0:1) << 1) | (((byte2 & (1 << (7 - x)))?0:1));
+                value *= 85; // Map values to simple rgb values
+                uint16_t finalx = tile_x + x;
+                uint16_t finaly = tile_y + y;
+                
+                bg_render[finaly][finalx].a = 255;
+                bg_render[finaly][finalx].a = value;
+                bg_render[finaly][finalx].a = value;
+                bg_render[finaly][finalx].a = value;
+            }
+        }
+    }
+
+    return (Color*)bg_render; // Does this work, or do I need to manually remap this?
+}
+
+uint8_t TileMaps_Textures[2][256][256] = {0};
+uint8_t*** TileMaps()
+{
+    return NULL;
 }
 
 void ppuStep()
@@ -49,8 +160,7 @@ void ppuStep()
                 mode = 1;
             }
 
-            line++;
-            writeByte(0xff44, line); //
+            writeByte(0xff44, ++line); //
             // Set HBlank interrupt/register/whatever
             // Set ppuclock to end of Mode 0 time
         break;
@@ -63,9 +173,11 @@ void ppuStep()
                 mode = 2;
                 line = 0;
             }
-            writeByte(0xff44, line);
+            writeByte(0xff44, ++line);
         break;
     }
+
+    updateLCDStatus();
 
     //ppuclock += 2; // Minimum clock dots per ppu cycle
 

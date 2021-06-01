@@ -71,6 +71,8 @@ void reset()
     memory.memory[0xffff] = 0x00;
 
     registers.pc = 0x0100;
+
+    init_ppu();
 }
 
 

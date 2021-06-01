@@ -3,6 +3,7 @@
 #define PPU_H
 
 #include <stdint.h>
+#include "raylib.h"
 
 // Registers in memory
 #define LCDC memory.memory[0xff40] // LCD Control (R/W)
@@ -47,5 +48,10 @@ extern uint8_t LCD[144][160];
 void reset_ppu_clock(uint16_t maxclock);
 
 void ppuStep();
+
+void init_ppu();
+
+Color* TileData();
+Color* BG();
 
 #endif
