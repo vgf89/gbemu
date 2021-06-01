@@ -2,6 +2,7 @@
 // Handles high level user actions such as loading roms, resetting
 // emulation, and providing the final image in the desired format.
 #include <stdio.h>
+#include <stdlib.h>
 #include "gameboy.h"
 #include "memory.h"
 #include "cpu.h"
@@ -27,6 +28,9 @@ void loadRom(char* rompath)
             fseek(fp, 0x8000, 0);
             fread(memory.ROMNN, 0x8000, 1, fp);
             break;
+        default:
+            printf("Cartidge type 0x%02X not supported");
+            exit(1);
     }
 }
 

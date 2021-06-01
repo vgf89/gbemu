@@ -53,7 +53,7 @@ int main()
     //SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
 
-    loadRom("testroms/blarrg/cpu_instrs/individual/01-special.gb");
+    //loadRom("testroms/blarrg/cpu_instrs/individual/01-special.gb");
     //loadRom("testroms/blarrg/cpu_instrs/individual/02-interrupts.gb");
     //loadRom("testroms/blarrg/cpu_instrs/individual/03-op sp,hl.gb");
     //loadRom("testroms/blarrg/cpu_instrs/individual/04-op r,imm.gb");
@@ -66,7 +66,7 @@ int main()
     //loadRom("testroms/blarrg/cpu_instrs/individual/11-op a,(hl).gb");
 
     //loadRom("testroms/games/Tetris\ (World)\ (Rev A).gb");
-    //loadRom("testroms/games/Dr.\ Mario\ (World)\ (Rev 1).gb");
+    loadRom("testroms/games/Dr.\ Mario\ (World)\ (Rev 1).gb");
 
     reset(); // Initialize gameboy state
 

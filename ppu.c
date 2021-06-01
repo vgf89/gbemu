@@ -24,11 +24,10 @@ Total dot count: (80 + 376) * 144 + 4560 = 70224
 */
 
 
-Color *tiles_pixels1;
+Color tiles_pixels1[192][128];
 
 void init_ppu()
 {
-    tiles_pixels1 = (Color*)malloc(128*192*sizeof(Color));
 }
 
 uint8_t lastLYCStatInterruptFlag = 0;
@@ -75,6 +74,8 @@ Color* TileData()
 
     // Loop tiles
     for (uint16_t tile = 0; tile < 0x180; tile++) {
+        uint16_t tile_x = (tile % 16)*8; // top-left position of tile in bg_render
+        uint16_t tile_y = (tile / 16)*8;
         // Loop y (2 bytes at a time)
         for (uint16_t y = 0; y < 8; y++) {
             uint8_t byte1 = memory.memory[0x8000 + tile * 16 + y * 2];
@@ -83,52 +84,62 @@ Color* TileData()
             for (uint8_t x = 0; x < 8; x++) {
                 char value = (((byte1 & (1 << (7 - x)))?0:1) << 1) | (((byte2 & (1 << (7 - x)))?0:1));
                 value *= 85; // Map values to simple rgb values
+
                 // TODO: Palette implementation
 
-                // TODO: There HAS to be a cleaner way to do this
-                // that makes the target resolution dependencies obvious
-                uint16_t finalx = (tile%16)*8 + x;
-                uint16_t finaly = (tile/16)*0x400 + y*0x80;
+                uint16_t finalx = tile_x + x;
+                uint16_t finaly = tile_y + y;
                 
-                uint16_t pixel2 = finaly + finalx;
-                tiles_pixels1[pixel2].a = 255;
-                tiles_pixels1[pixel2].r = value;
-                tiles_pixels1[pixel2].g = value;
-                tiles_pixels1[pixel2].b = value;
+                tiles_pixels1[finaly][finalx].a = 255;
+                tiles_pixels1[finaly][finalx].r = value;
+                tiles_pixels1[finaly][finalx].g = value;
+                tiles_pixels1[finaly][finalx].b = value;
             }
         }
     }
 
-    return tiles_pixels1;
+    return (Color*)tiles_pixels1;
 }
 
 Color bg_render[256][256] = {0};
-// Background and Window maps are 32x32 tiles. Memory area $9800-$9BFF or $9C00-$9FFF
+// Background maps are 32x32 tiles. Memory area $9800-$9BFF or $9C00-$9FFF
 // Returns pixel array of 256x256
 Color* BG()
 {
     for (uint16_t tile = 0; tile < 0x400; tile++) {
-        uint16_t tile_x = (tile % 32)*8; // top-left position of tile in tiles_bg
+        uint16_t tile_x = (tile % 32)*8; // top-left position of tile in bg_render
         uint16_t tile_y = (tile / 32)*8;
 
+        uint16_t BG_tile_map_area = (LCDC & (1 << 3))?0x9c00:0x9800; // tile map area
+        uint16_t tile_address;
+        if (LCDC & (1<<4)) { // tile data area address mode
+            tile_address = memory.memory[BG_tile_map_area + tile] * 16 + 0x8000;
+        } else {
+            int8_t stile = (int8_t)memory.memory[BG_tile_map_area + tile];
+            tile_address = stile * 16 + 0x9000;
+        }
+
         for (uint16_t y = 0; y < 8; y++) { // 
-            uint8_t byte1 = memory.memory[0x9800 + tile * 16 + y * 2];
-            uint8_t byte2 = memory.memory[0x9800 + tile * 16 + y * 2 + 1];
+            uint8_t byte1 = memory.memory[tile_address + y * 2];
+            uint8_t byte2 = memory.memory[tile_address + y * 2 + 1];
             for (uint8_t x = 0; x < 8; x++) {
                 char value = (((byte1 & (1 << (7 - x)))?0:1) << 1) | (((byte2 & (1 << (7 - x)))?0:1));
                 value *= 85; // Map values to simple rgb values
+
+                // TODO: Palette Implementation
+
                 uint16_t finalx = tile_x + x;
                 uint16_t finaly = tile_y + y;
                 
                 bg_render[finaly][finalx].a = 255;
-                bg_render[finaly][finalx].a = value;
-                bg_render[finaly][finalx].a = value;
-                bg_render[finaly][finalx].a = value;
+                bg_render[finaly][finalx].r = value;
+                bg_render[finaly][finalx].g = value;
+                bg_render[finaly][finalx].b = value;
             }
         }
     }
 
-    return (Color*)bg_render; // Does this work, or do I need to manually remap this?
+    return (Color*)bg_render;
 }
 
 uint8_t TileMaps_Textures[2][256][256] = {0};
@@ -151,11 +162,11 @@ void ppuStep()
             mode = 3;
         break;
         case 3: // Rendering line
-            ppuclock += 168; // FIXME. This is not accurate.
+            ppuclock += 168; // FIXME: This is not accurate.
             mode = 0;
         break;
         case 0:              // Horizontal Blanking
-            ppuclock += 208; // FIXME. this is not accurate
+            ppuclock += 208; // FIXME: this is not accurate
             if (line == 144) {
                 mode = 1;
             }
