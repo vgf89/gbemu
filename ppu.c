@@ -159,15 +159,15 @@ void ppuStep()
 
     switch(mode) {
         case 2: // OAM search for sprite indexes to render
-            ppuclock += 80; // early return from ppuStep() until line rendering is ready to start
+            ppuclock += 20; // early return from ppuStep() until line rendering is ready to start
             mode = 3;
         break;
         case 3: // Rendering line
-            ppuclock += 168; // FIXME: This is not accurate.
+            ppuclock += 72; // FIXME: This is not accurate.
             mode = 0;
         break;
         case 0:              // Horizontal Blanking
-            ppuclock += 208; // FIXME: this is not accurate
+            ppuclock += 22; // FIXME: this is not accurate
             if (line == 143) {
                 mode = 1;
             }
@@ -184,19 +184,18 @@ void ppuStep()
                 printf("vblank   ");
             }
 
-            ppuclock += 456;
+            ppuclock += 114;
 
             if (line == 153) {
                 mode = 2;
                 line = 0;
+                printf("((gb vblank, ppuclock = %d ))", ppuclock);
             }
             writeByte(0xff44, ++line);
         break;
     }
 
     updateLCDStatus();
-
-    //ppuclock += 2; // Minimum clock dots per ppu cycle
 
     // Frames are defined by a few things...
     // Tiles:

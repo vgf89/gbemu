@@ -86,12 +86,11 @@ void reset()
 
 
 //const int MAX_CLOCK = 70224; // Number of cycles per frame
-const int MAX_CLOCK = 70224; // Number of cycles per frame
+const int MAX_CLOCK = 69905; // Number of cycles per frame
 // Magic number for 60FPS. 4194304 cycles per second / 60 = 69905
 // Possible rates:
     // DMG: 69905
     // Super Game Boy 71590 (plus this one's divisible by 4), which might result in frame timing match?
-    // PPU VBLANK rate: 70224, which should force emulated gameboy vblank to match target framerate (typically 60fps)
 
 // There are likely better ways to handle this, i.e. just waiting for VBLANK interrupt to break the step loop.
 // If VBLANK timing is consistent though, we should be breaking based on that timing.
