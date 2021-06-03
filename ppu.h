@@ -42,7 +42,7 @@
 
 
 
-extern uint8_t LCD[144][160];
+extern Color LCD[144][160];
 
 
 void reset_ppu_clock(uint16_t maxclock);

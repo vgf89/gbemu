@@ -8,11 +8,12 @@
 #include "cpu.h"
 #include "ppu.h"
 #include "timer.h"
+#include "input.h"
 
 // externs
 extern struct registers_t registers;
 extern union memory_t memory;
-extern uint8_t LCD[144][160];
+extern Color LCD[144][160];
 
 
 void loadRom(char* rompath)
@@ -36,6 +37,7 @@ void loadRom(char* rompath)
 
 void reset()
 {
+    // BOOT
     registers.af = 0x01b0;
     registers.bc = 0x0013;
     registers.de = 0x00d8;
@@ -76,10 +78,14 @@ void reset()
 
     registers.pc = 0x0100;
 
+    // Other stuff
+    memory.memory[0xff00] = 0xff; // set default joypad to nothing pressed
+
     init_ppu();
 }
 
 
+//const int MAX_CLOCK = 70224; // Number of cycles per frame
 const int MAX_CLOCK = 70224; // Number of cycles per frame
 // Magic number for 60FPS. 4194304 cycles per second / 60 = 69905
 // Possible rates:
@@ -105,17 +111,13 @@ void step() {
 
     clock = 0;
 
-    // Magic number for 60FPS. 4194304 cycles per second / 60 = 69905
-    // Alternative rate: Super Game Boy 71590 (plus this one's divisible by 4)
     while (clock < MAX_CLOCK)
     {
+        updateInput();
         cpuStep();
         timerStep();
         ppuStep();
         clock++;
-
-        // update timers
-        // run interrupts
     }
     frames++;
     //printf("%d clock cycles completed!  frame/60: %f\n", MAX_CLOCK, (float)frames / 60.0);

@@ -15,7 +15,7 @@
                     "RAYLIB_PATH=C:/raylib/raylib",
                     "RAYGUI_PATH=C:/raylib/raygui-2.6",
                     "PROJECT_NAME=gbemu",
-                    "OBJS=main.c gameboy.c cpu.c memory.c ppu.c timer.c",
+                    "OBJS=main.c gameboy.c cpu.c memory.c ppu.c timer.c input.c",
                     "BUILD_MODE=DEBUG"
                 ]
             },
@@ -23,7 +23,7 @@
                 "args": [
                     "RAYLIB_PATH=<path_to_raylib>/raylib",
                     "PROJECT_NAME=gbemu",
-                    "OBJS=main.c gameboy.c cpu.c memory.c ppu.c timer.c",
+                    "OBJS=main.c gameboy.c cpu.c memory.c ppu.c timer.c input.c",
                     "BUILD_MODE=DEBUG"
                 ]
             },
@@ -45,14 +45,14 @@
                     "RAYLIB_PATH=C:/raylib/raylib",
                     "RAYGUI_PATH=C:/raylib/raygui-2.6",
                     "PROJECT_NAME=gbemu",
-                    "OBJS=main.c gameboy.c cpu.c memory.c ppu.c timer.c",
+                    "OBJS=main.c gameboy.c cpu.c memory.c ppu.c timer.c input.c",
                 ]
             },
             "osx": {
                 "args": [
                     "RAYLIB_PATH=<path_to_raylib>/raylib",
                     "PROJECT_NAME=gbemu",
-                    "OBJS=main.c gameboy.c cpu.c memory.c ppu.c timer.c",
+                    "OBJS=main.c gameboy.c cpu.c memory.c ppu.c timer.c input.c",
                 ]
             },
             "group": "build",

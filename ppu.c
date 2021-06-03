@@ -4,8 +4,9 @@
 #include "ppu.h"
 #include "memory.h"
 #include <stdlib.h>
+#include <stdio.h>
 
-uint8_t LCD[144][160];
+Color LCD[144][160];
 extern union memory_t memory;
 
 extern uint32_t clock;
@@ -167,7 +168,7 @@ void ppuStep()
         break;
         case 0:              // Horizontal Blanking
             ppuclock += 208; // FIXME: this is not accurate
-            if (line == 144) {
+            if (line == 143) {
                 mode = 1;
             }
 
@@ -178,6 +179,11 @@ void ppuStep()
         case 1: // Vertical Blanking. Similar to horizontal blanking, but long.
             // Spit out the final image
             // Set VBlank interrupt etc
+            if (line == 144) {
+                IF_SET(I_VBLANK);
+                printf("vblank   ");
+            }
+
             ppuclock += 456;
 
             if (line == 153) {

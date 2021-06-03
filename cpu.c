@@ -35,57 +35,43 @@ void cpuStep() {
     if (IME_flag) {
         if (IE_ISSET(I_VBLANK) && IF_ISSET(I_VBLANK)) {
             cpuclock += 20; // This timinig may or may not be right
-            if (halted || IME_flag) {
-                halted = 0;
-                IF_CLEAR(I_VBLANK);
-                IME_flag = 0;
-                call_nn(0x0040);
-            }
             halted = 0;
+            IF_CLEAR(I_VBLANK);
+            IME_flag = 0;
+            //printf("captured VBLANK\n");
+            call_nn(0x0040);
             return;
         }
         else if (IE_ISSET(I_LCD_STAT) && IF_ISSET(I_LCD_STAT)) {
             cpuclock += 20; // This timinig may or may not be right
-            if (halted || IME_flag) {
-                halted = 0;
-                IF_CLEAR(I_LCD_STAT);
-                IME_flag = 0;
-                call_nn(0x0048);
-            }
             halted = 0;
+            IF_CLEAR(I_LCD_STAT);
+            IME_flag = 0;
+            call_nn(0x0048);
             return;
         }
         else if (IE_ISSET(I_TIMER) && IF_ISSET(I_TIMER)) {
             cpuclock += 20; // This timing may or may not be right
-            if (halted || IME_flag) {
-                halted = 0;
-                IF_CLEAR(I_TIMER);
-                IME_flag = 0;
-                call_nn(0x0050);
-            }
-
+            halted = 0;
+            IF_CLEAR(I_TIMER);
+            IME_flag = 0;
+            call_nn(0x0050);
             return;
         }
         else if (IE_ISSET(I_SERIAL) && IF_ISSET(I_SERIAL)) {
             cpuclock += 20; // This timinig may or may not be right
-            if (halted || IME_flag) {
-                halted = 0;
-                IF_CLEAR(I_SERIAL);
-                IME_flag = 0;
-                call_nn(0x0058);
-            }
             halted = 0;
+            IF_CLEAR(I_SERIAL);
+            IME_flag = 0;
+            call_nn(0x0058);
             return;
         }
         else if (IE_ISSET(I_JOYPAD) && IF_ISSET(I_JOYPAD)) {
             cpuclock += 20; // This timinig may or may not be right
-            if (halted || IME_flag) {
-                halted = 0;
-                IF_CLEAR(I_JOYPAD);
-                IME_flag = 0;
-                call_nn(0x0060);
-            }
             halted = 0;
+            IF_CLEAR(I_JOYPAD);
+            IME_flag = 0;
+            call_nn(0x0060);
             return;
         }
     }

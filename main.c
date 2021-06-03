@@ -50,7 +50,7 @@ int main()
 
     //Vector3 cubePosition = { 0 };
 
-    //SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
+    SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
 
     //loadRom("testroms/blarrg/cpu_instrs/individual/01-special.gb");
@@ -65,8 +65,8 @@ int main()
     //loadRom("testroms/blarrg/cpu_instrs/individual/10-bit ops.gb");
     //loadRom("testroms/blarrg/cpu_instrs/individual/11-op a,(hl).gb");
 
-    //loadRom("testroms/games/Tetris\ (World)\ (Rev A).gb");
-    loadRom("testroms/games/Dr.\ Mario\ (World)\ (Rev 1).gb");
+    loadRom("testroms/games/Tetris\ (World)\ (Rev A).gb");
+    //loadRom("testroms/games/Dr.\ Mario\ (World)\ (Rev 1).gb");
 
     reset(); // Initialize gameboy state
 
@@ -103,6 +103,7 @@ int main()
         //----------------------------------------------------------------------------------
 
         step();
+        printf(" frame finished\n");
 
         // Draw
         //----------------------------------------------------------------------------------

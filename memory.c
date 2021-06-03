@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "memory.h"
 #include "timer.h"
+#include "input.h"
 
 union memory_t memory = {0};
 
@@ -8,22 +9,40 @@ union memory_t memory = {0};
 // TODO: Implement ECHORAM 
 uint8_t readByte(uint16_t address)
 {
-    return memory.memory[address];
+    if((address >= 0xfea0) && (address <= 0xfeff)) // Unusable RAM
+    {
+        return 0xff;
+    }
+    if(address == 0xff00) // joypad input
+    {
+        return getInput();
+    }
+    else {
+        return memory.memory[address];
+    }
 }
 
 void writeByte(uint16_t address, uint8_t val)
 {
-    if (address == 0xff02 && val == 0x81) { // Link Port
+    if (address == 0xff02 && val == 0x81) // Link Port
+    {
         //printf("captured Link Cable byte: ");
         printf("%c", (char)readByte(0xff01));
         //printf("\n");
         //return; // I assume it's basically discarded if no device is connected?
     }
 
-    if (&memory.memory[address] == &memory.DIV) {
+    if (&memory.memory[address] == &memory.DIV)
+    {
         resetDIV();
 
-    } else {
+    }
+    else if((address >= 0xfea0) && (address <= 0xfeff)) {} // Unusable RAM
+    else if(address == 0xff00) { // joypad input
+        selectInput(val);
+    } // Can't write to joypad input this way. use memory.memory[0xff00]
+    else
+    {
         memory.memory[address] = val;
     }
 }
