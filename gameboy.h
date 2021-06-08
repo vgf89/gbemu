@@ -7,7 +7,6 @@
 extern uint32_t clock;
 
 void reset();
-void loadRom(char* rompath);
 void step();
 
 #endif

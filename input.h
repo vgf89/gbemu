@@ -18,6 +18,6 @@ struct joypadState_t {
 void updateInput();
 
 uint8_t getInput();
-uint8_t selectInput(uint8_t byte);
+void selectInput(uint8_t byte);
 
 #endif

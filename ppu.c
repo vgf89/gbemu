@@ -181,7 +181,7 @@ void ppuStep()
             // Set VBlank interrupt etc
             if (line == 144) {
                 IF_SET(I_VBLANK);
-                printf("vblank   ");
+                //printf("vblank   ");
             }
 
             ppuclock += 114;
@@ -189,7 +189,7 @@ void ppuStep()
             if (line == 153) {
                 mode = 2;
                 line = 0;
-                printf("((gb vblank, ppuclock = %d ))", ppuclock);
+                //printf("((gb vblank, ppuclock = %d ))", ppuclock);
             }
             writeByte(0xff44, ++line);
         break;

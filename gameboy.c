@@ -15,26 +15,6 @@ extern struct registers_t registers;
 extern union memory_t memory;
 extern Color LCD[144][160];
 
-
-void loadRom(char* rompath)
-{
-    // Load first ROM bank
-    FILE* fp;
-    fp = fopen(rompath, "r");
-    fread(memory.ROM00, 0x8000, 1, fp);
-    // Detect cartridge type (only support ROM ONLY for now)
-    switch(memory.ROM00[0x0147]) {
-        // ROM Only (read in Bank 1)
-        case 0x00:
-            fseek(fp, 0x8000, 0);
-            fread(memory.ROMNN, 0x8000, 1, fp);
-            break;
-        default:
-            printf("Cartidge type 0x%02X not supported");
-            exit(1);
-    }
-}
-
 void reset()
 {
     // BOOT
@@ -85,7 +65,6 @@ void reset()
 }
 
 
-//const int MAX_CLOCK = 70224; // Number of cycles per frame
 const int MAX_CLOCK = 69905; // Number of cycles per frame
 // Magic number for 60FPS. 4194304 cycles per second / 60 = 69905
 // Possible rates:

@@ -18,7 +18,7 @@ union memory_t {
             };
             uint8_t VRAM[0x2000];    // $8000-$9fff 8KiB Video RAM
         };
-        uint8_t EXRAM[0x2000];   // $a000-$bfff 8KiB External RAM
+        uint8_t EXRAM[0x2000];   // $a000-$bfff 8KiB External RAM (tends to be battery-backes SRAM)
         uint8_t WRAM1[0x1000];   // $c000-$cfff 4KiB Work RAM
         uint8_t WRAM2[0x1000];   // $d000-$dfff 4KiB Work RAM (switchable banks 1~7 on CGB)
         uint8_t ECHORAM[0x1E00]; // $e000-$fdff An artifact of how the bus is connected. Mirrors C000~DDFF. Nintendo says use of this area is prohibited.
@@ -72,6 +72,16 @@ union memory_t {
 #define IF_ISSET(x) (memory.IFLAGS & (x))
 #define IF_SET(x) (memory.IFLAGS |= (x))
 #define IF_CLEAR(x) (memory.IFLAGS &= ~(x))
+
+
+#define NoMBC 0x00
+#define MBC1 0x01
+
+extern uint8_t cartridgeMode;
+extern uint8_t MBC1BankNN;
+extern uint8_t MBC1Banks[125][0x4000]; // TODO: Implement support for larger cartridges > 5 bits of banks (Selected ROM Bank = (Secondary Bank << 5) + ROM Bank.)
+void loadRom(char* rompath);
+
 
 uint8_t readByte(uint16_t address);
 uint16_t readWord(uint16_t address);

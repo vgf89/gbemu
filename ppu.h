@@ -41,7 +41,6 @@
 
 
 
-
 extern Color LCD[144][160];
 
 

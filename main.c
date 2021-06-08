@@ -23,6 +23,7 @@
 #include "raylib.h"
 #include "gameboy.h"
 #include "ppu.h"
+#include "memory.h"
 
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
@@ -50,11 +51,11 @@ int main()
 
     //Vector3 cubePosition = { 0 };
 
-    SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
+    //SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
 
     //loadRom("testroms/blarrg/cpu_instrs/individual/01-special.gb");
-    //loadRom("testroms/blarrg/cpu_instrs/individual/02-interrupts.gb");
+    loadRom("testroms/blarrg/cpu_instrs/individual/02-interrupts.gb"); // fails #4
     //loadRom("testroms/blarrg/cpu_instrs/individual/03-op sp,hl.gb");
     //loadRom("testroms/blarrg/cpu_instrs/individual/04-op r,imm.gb");
     //loadRom("testroms/blarrg/cpu_instrs/individual/05-op rp.gb");
@@ -64,9 +65,12 @@ int main()
     //loadRom("testroms/blarrg/cpu_instrs/individual/09-op r,r.gb");
     //loadRom("testroms/blarrg/cpu_instrs/individual/10-bit ops.gb");
     //loadRom("testroms/blarrg/cpu_instrs/individual/11-op a,(hl).gb");
-
-    loadRom("testroms/games/Tetris\ (World)\ (Rev A).gb");
+    //loadRom("testroms/blarrg/cpu_instrs/cpu_instrs.gb"); // STOPs during 3
+    
+    
+    //loadRom("testroms/games/Tetris\ (World)\ (Rev A).gb");
     //loadRom("testroms/games/Dr.\ Mario\ (World)\ (Rev 1).gb");
+    //loadRom("testroms/games/Kirby's\ Dream\ Land\ (USA,\ Europe).gb");
 
     reset(); // Initialize gameboy state
 
@@ -103,7 +107,7 @@ int main()
         //----------------------------------------------------------------------------------
 
         step();
-        printf(" frame finished\n");
+        //printf(" frame finished\n");
 
         // Draw
         //----------------------------------------------------------------------------------

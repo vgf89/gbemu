@@ -66,7 +66,7 @@ uint8_t getInput()
     return input_register;
 }
 
-uint8_t selectInput(uint8_t byte)
+void selectInput(uint8_t byte)
 {
     memory.memory[0xff00] &= ~(1 << 4); // Clear bits 4 and 5
     memory.memory[0xff00] &= ~(1 << 5);
