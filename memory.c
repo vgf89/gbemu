@@ -78,7 +78,7 @@ void writeByte(uint16_t address, uint8_t val)
         //return; // I assume it's basically discarded if no device is connected?
     }
 
-    if (&memory.memory[address] == &memory.DIV)
+    else if (&memory.memory[address] == &memory.DIV)
     {
         resetDIV();
 
@@ -96,11 +96,7 @@ void writeByte(uint16_t address, uint8_t val)
             // TODO: Mask to number number of bits that represents maximum bank number for cart
             MBC1BankNN = val;
         }
-        else if (address <= 0x3fff)
-        {
-            memory.memory[address] = val;
-        }
-        else
+        else if (address >= 0x8000)
         {
             memory.memory[address] = val;
         }
