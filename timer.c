@@ -22,9 +22,9 @@ void timerStep()
 
     /* Timer increment circuit */
     uint8_t mux1v = ((memory.DIV & (1 << 1)) != 0);
-    mux1v |= ((fullDIV & (1 << 7)) != 0) << 3;
-    mux1v |= ((fullDIV & (1 << 5)) != 0) << 2;
-    mux1v |= ((fullDIV & (1 << 3)) != 0 ) << 1;
+    mux1v |= (((fullDIV & (1 << 3)) != 0) << 1);
+    mux1v |= (((fullDIV & (1 << 5)) != 0) << 2);
+    mux1v |= (((fullDIV & (1 << 7)) != 0) << 3);
     
     uint8_t tacEnable = (memory.TAC & (1 << 2)) != 0;
     uint8_t tacFreq = memory.TAC & 0x3;
@@ -37,7 +37,7 @@ void timerStep()
         memory.TIMA++;
         if (memory.TIMA == 0) { // overflowed
             memory.TIMA = memory.TMA;
-            if (IE_ISSET(I_TIMER) && !(IF_ISSET(I_TIMER))) {
+            if (/*IE_ISSET(I_TIMER) && */!(IF_ISSET(I_TIMER))) {
                 fflush(stdout);
                 IF_SET(I_TIMER);
             }

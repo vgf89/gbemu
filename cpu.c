@@ -34,11 +34,11 @@ void cpuStep() {
 
     if (IME_flag) {
         if (IE_ISSET(I_VBLANK) && IF_ISSET(I_VBLANK)) {
-            cpuclock += 20; // This timinig may or may not be right
+            cpuclock += 20; // This timing may or may not be right
             halted = 0;
             IF_CLEAR(I_VBLANK);
             IME_flag = 0;
-            //printf("captured VBLANK\n");
+            //printf("captured VBLANK\n"); // Can i synchronize on this?
             call_nn(0x0040);
             return;
         }
@@ -178,8 +178,8 @@ void ei() {
 void reti()
 {
     ret();
-    //ei();
-    IME_flag = 1;
+    ei();
+    //IME_flag = 1;
 }
 
 void halt() {
