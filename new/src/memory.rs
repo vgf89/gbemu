@@ -77,7 +77,7 @@ impl Memory {
         }
     }
 
-    fn readByte(&mut self, address:u16) -> u8 {
+    pub fn readByte(&mut self, address:u16) -> u8 {
         if self.cartridgeMode == MBC1 && address >= 0x4000 && address < 0x8000 {
             return self.MBC1Banks[self.MBC1BankNN as usize][address as usize - 0x4000];
         }
@@ -93,13 +93,13 @@ impl Memory {
         return self.ram[address as usize];
     }
 
-    fn readWord(&mut self, address:u16) -> u16 {
+    pub fn readWord(&mut self, address:u16) -> u16 {
         let c1 = self.readByte(address);
         let c2 = self.readByte(address + 1);
         return ((c2 as u16) << 8) | c1 as u16;
     }
 
-    fn writeByte(&mut self, address:u16, val:u8) {
+    pub fn writeByte(&mut self, address:u16, val:u8) {
         if address == 0xff02 && val == 0x81 {
 
             print!("{}", self.readByte(0xff01) as char);
@@ -119,7 +119,7 @@ impl Memory {
         }
     }
 
-    fn writeWord(&mut self, address:u16, val:u16) {
+    pub fn writeWord(&mut self, address:u16, val:u16) {
         let c1 = (val & 0xff) as u8;
         let c2 = ((val >> 8) & 0xff) as u8;
         self.writeByte(address, c1);
@@ -127,24 +127,24 @@ impl Memory {
     }
 
 
-    fn IF_ISSET (&mut self, bitmask:u8) -> u8 {
+    pub fn IF_ISSET (&mut self, bitmask:u8) -> u8 {
         return self.ram[IFLAGS as usize] & bitmask;
     }
-    fn IF_SET (&mut self, bitmask:u8) {
+    pub fn IF_SET (&mut self, bitmask:u8) {
         self.ram[IFLAGS as usize] = self.ram[IFLAGS as usize] | bitmask;
     }
-    fn IF_CLEAR (&mut self, bitmask:u8) {
+    pub fn IF_CLEAR (&mut self, bitmask:u8) {
         self.ram[IFLAGS as usize] = self.ram[IFLAGS as usize] & !bitmask;
     }
 
     // IE Interrupts Enable Register macros
-    fn IE_ISSET (&mut self, bitmask:u8) -> u8{
+    pub fn IE_ISSET (&mut self, bitmask:u8) -> u8{
         return self.ram[IE as usize] & bitmask;
     }
-    fn IE_SET (&mut self, bitmask:u8) {
+    pub fn IE_SET (&mut self, bitmask:u8) {
         self.ram[IE as usize] = self.ram[IE as usize] | bitmask;
     }
-    fn IE_CLEAR (&mut self, bitmask:u8) {
+    pub fn IE_CLEAR (&mut self, bitmask:u8) {
         self.ram[IE as usize] = self.ram[IE as usize] & !bitmask;
     } 
 }
