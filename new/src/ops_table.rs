@@ -217,63 +217,63 @@ pub const instructions: &'static [instruction/*; 256*/] = &[
     instruction {disas: "JP 0x%04X", cycles: 16, execute: FnEnum::OpLen3(CPU::jp_nn)},                 // 0xC3
     instruction {disas: "CALL NZ", cycles: 12, execute: FnEnum::OpLen3(CPU::call_nz)},                 // 0xC4 12t-24t
     instruction {disas: "PUSH BC", cycles: 16, execute: FnEnum::OpLen1(CPU::push_bc)},                 // 0xC5
-    instruction {disas: "ADD A, 0x%02X", cycles: 8, execute: FnEnum::OpLen2(add_a_n)},            // 0xC6
+    instruction {disas: "ADD A, 0x%02X", cycles: 8, execute: FnEnum::OpLen2(CPU::add_a_n)},            // 0xC6
     instruction {disas: "RST 00h", cycles: 16, execute: FnEnum::OpLen1(CPU::rst00)},                   // 0xC7
     instruction {disas: "RET Z", cycles: 8, execute: FnEnum::OpLen1(CPU::ret_z)},                      // 0xC8 8t-20t
     instruction {disas: "RET", cycles: 16, execute: FnEnum::OpLen1(CPU::ret)},                         // 0xC9
     instruction {disas: "JP Z, 0x%04X", cycles: 12, execute: FnEnum::OpLen3(CPU::jp_z)},               // 0xCA 12t-16t
-    instruction {disas: "PREFIX CB", cycles: 0, execute: FnEnum::OpLen2(cb)},                     // 0xCB
+    instruction {disas: "PREFIX CB", cycles: 0, execute: FnEnum::OpLen2(CPU::cb)},                     // 0xCB
     instruction {disas: "CALL Z, 0x%04X", cycles: 12, execute: FnEnum::OpLen3(CPU::call_z)},           // 0xCC 12t-24t
     instruction {disas: "CALL 0x%04X", cycles: 24, execute: FnEnum::OpLen3(CPU::call_nn)},             // 0xCD
-    instruction {disas: "ADC A, 0x%02X", cycles: 8, execute: FnEnum::OpLen2(adc_a_n)},            // 0xCE
+    instruction {disas: "ADC A, 0x%02X", cycles: 8, execute: FnEnum::OpLen2(CPU::adc_a_n)},            // 0xCE
     instruction {disas: "RST 08h", cycles: 16, execute: FnEnum::OpLen1(CPU::rst08)},                   // 0xCF
     instruction {disas: "RET NC", cycles: 8, execute: FnEnum::OpLen1(CPU::ret_nc)},                    // 0xD0 8t-20t
     instruction {disas: "POP DE", cycles: 12, execute: FnEnum::OpLen1(CPU::pop_de)},                   // 0xD1
     instruction {disas: "JP NC, 0x%04X", cycles: 12, execute: FnEnum::OpLen3(CPU::jp_nc)},             // 0xD2 12t-16t
-    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::OpLen1(CPU::UNDEFINED)},              // 0xD3
+    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::UNDEFINED},              // 0xD3
     instruction {disas: "CALL NC, 0x%04X", cycles: 12, execute: FnEnum::OpLen3(CPU::call_nc)},         // 0xD4 12t-24t
     instruction {disas: "PUSH DE", cycles: 16, execute: FnEnum::OpLen1(CPU::push_de)},                 // 0xD5
-    instruction {disas: "SUB A, 0x%02X", cycles: 8, execute: FnEnum::OpLen2(sub_a_n)},            // 0xD6
+    instruction {disas: "SUB A, 0x%02X", cycles: 8, execute: FnEnum::OpLen2(CPU::sub_a_n)},            // 0xD6
     instruction {disas: "RST 10h", cycles: 16, execute: FnEnum::OpLen1(CPU::rst10)},                   // 0xD7
     instruction {disas: "RET C", cycles: 8, execute: FnEnum::OpLen1(CPU::ret_c)},                      // 0xD8 8t-20t
     instruction {disas: "RETI", cycles: 16, execute: FnEnum::OpLen1(CPU::reti)},                       // 0xD9
     instruction {disas: "JP C, 0x%04X", cycles: 12, execute: FnEnum::OpLen3(CPU::jp_c)},               // 0xDA 12t-24t
-    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::OpLen1(CPU::UNDEFINED)},              // 0xDB
+    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::UNDEFINED},              // 0xDB
     instruction {disas: "CALL C, 0x%04X", cycles: 12, execute: FnEnum::OpLen3(CPU::call_c)},           // 0xDC 12t-24t
-    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::OpLen1(CPU::UNDEFINED)},              // 0xDD
-    instruction {disas: "SBC A, 0x%02X", cycles: 8, execute: FnEnum::OpLen2(sbc_a_n)},            // 0xDE
+    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::UNDEFINED},              // 0xDD
+    instruction {disas: "SBC A, 0x%02X", cycles: 8, execute: FnEnum::OpLen2(CPU::sbc_a_n)},            // 0xDE
     instruction {disas: "RST 18h", cycles: 16, execute: FnEnum::OpLen1(CPU::rst18)},                   // 0xDF
-    instruction {disas: "LD (FF00 + 0x%02X), A", cycles: 12, execute: FnEnum::OpLen2(ld_np_a)},   // 0xE0
+    instruction {disas: "LD (FF00 + 0x%02X), A", cycles: 12, execute: FnEnum::OpLen2(CPU::ld_np_a)},   // 0xE0
     instruction {disas: "POP HL", cycles: 12, execute: FnEnum::OpLen1(CPU::pop_hl)},                   // 0xE1
     instruction {disas: "LD (FF00+C), A", cycles: 8, execute: FnEnum::OpLen1(CPU::ld_ffcp_a)},         // 0xE2
-    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::OpLen1(CPU::UNDEFINED)},              // 0xE3
-    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::OpLen1(CPU::UNDEFINED)},              // 0xE4
+    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::UNDEFINED},              // 0xE3
+    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::UNDEFINED},              // 0xE4
     instruction {disas: "PUSH HL", cycles: 16, execute: FnEnum::OpLen1(CPU::push_hl)},                 // 0xE5
-    instruction {disas: "AND A, 0x%02X", cycles: 8, execute: FnEnum::OpLen2(and_n)},              // 0xE6
+    instruction {disas: "AND A, 0x%02X", cycles: 8, execute: FnEnum::OpLen2(CPU::and_n)},              // 0xE6
     instruction {disas: "RST 20h", cycles: 16, execute: FnEnum::OpLen1(CPU::rst20)},                   // 0xE7
-    instruction {disas: "ADD SP, 0x%02X", cycles: 16, execute: FnEnum::OpLen2(add_sp_n)},         // 0xE8
+    instruction {disas: "ADD SP, 0x%02X", cycles: 16, execute: FnEnum::OpLen2(CPU::add_sp_n)},         // 0xE8
     instruction {disas: "JP HL", cycles: 4, execute: FnEnum::OpLen1(CPU::jp_hl)},                      // 0xE9
     instruction {disas: "LD (0x%04X), A", cycles: 16, execute: FnEnum::OpLen3(CPU::ld_nnp_a)},         // 0xEA
-    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::OpLen1(CPU::UNDEFINED)},              // 0xEB
-    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::OpLen1(CPU::UNDEFINED)},              // 0xEC
-    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::OpLen1(CPU::UNDEFINED)},              // 0xED
-    instruction {disas: "XOR A, 0x%02X", cycles: 8, execute: FnEnum::OpLen2(xor_n)},              // 0xEE
+    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::UNDEFINED},              // 0xEB
+    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::UNDEFINED},              // 0xEC
+    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::UNDEFINED},              // 0xED
+    instruction {disas: "XOR A, 0x%02X", cycles: 8, execute: FnEnum::OpLen2(CPU::xor_n)},              // 0xEE
     instruction {disas: "RST 28h", cycles: 16, execute: FnEnum::OpLen1(CPU::rst28)},                   // 0xEF
-    instruction {disas: "LD A, (FF00 + 0x%02X)", cycles: 12, execute: FnEnum::OpLen2(ld_a_np)},   // 0xF0
+    instruction {disas: "LD A, (FF00 + 0x%02X)", cycles: 12, execute: FnEnum::OpLen2(CPU::ld_a_np)},   // 0xF0
     instruction {disas: "POP AF", cycles: 12, execute: FnEnum::OpLen1(CPU::pop_af)},                   // 0xF1
     instruction {disas: "LD A, (FF00 + C)", cycles: 8, execute: FnEnum::OpLen1(CPU::ld_a_ffcp)},       // 0xF2
     instruction {disas: "DI", cycles: 4, execute: FnEnum::OpLen1(CPU::di)},                            // 0xF3
-    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::OpLen1(CPU::UNDEFINED)},                   // 0xF4
+    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::UNDEFINED},                   // 0xF4
     instruction {disas: "PUSH AF", cycles: 16, execute: FnEnum::OpLen1(CPU::push_af)},                 // 0xF5
-    instruction {disas: "OR A, 0x%02X", cycles: 8, execute: FnEnum::OpLen2(or_n)},                // 0xF6
+    instruction {disas: "OR A, 0x%02X", cycles: 8, execute: FnEnum::OpLen2(CPU::or_n)},                // 0xF6
     instruction {disas: "RST 30h", cycles: 16, execute: FnEnum::OpLen1(CPU::rst30)},                   // 0xF7
-    instruction {disas: "LD HL, SP + 0x%02X", cycles: 12, execute: FnEnum::OpLen2(ld_hl_spn)},    // 0xF8
+    instruction {disas: "LD HL, SP + 0x%02X", cycles: 12, execute: FnEnum::OpLen2i(CPU::ld_hl_spn)},    // 0xF8
     instruction {disas: "LD SP, HL", cycles: 8, execute: FnEnum::OpLen1(CPU::ld_sp_hl)},               // 0xF9
     instruction {disas: "LD A, (0x%04X)", cycles: 16, execute: FnEnum::OpLen3(CPU::ld_a_nnp)},         // 0xFA
     instruction {disas: "EI", cycles: 4, execute: FnEnum::OpLen1(CPU::ei)},                            // 0xFB
-    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::OpLen1(CPU::UNDEFINED)},              // 0xFC
-    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::OpLen1(CPU::UNDEFINED)},              // 0xFD
-    instruction {disas: "CP A, 0x%02X", cycles: 8, execute: FnEnum::OpLen2(cp_n)},                // 0xFE
+    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::UNDEFINED},              // 0xFC
+    instruction {disas: "UNDEFINED", cycles: 0, execute: FnEnum::UNDEFINED},              // 0xFD
+    instruction {disas: "CP A, 0x%02X", cycles: 8, execute: FnEnum::OpLen2(CPU::cp_n)},                // 0xFE
     instruction {disas: "RST 38h", cycles: 16, execute: FnEnum::OpLen1(CPU::rst38)},                    // 0xFF
 ];
 

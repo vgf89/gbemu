@@ -77,7 +77,7 @@ impl Memory {
         }
     }
 
-    pub fn readByte(&mut self, address:u16) -> u8 {
+    pub fn readByte(&self, address:u16) -> u8 {
         if self.cartridgeMode == MBC1 && address >= 0x4000 && address < 0x8000 {
             return self.MBC1Banks[self.MBC1BankNN as usize][address as usize - 0x4000];
         }
@@ -93,7 +93,7 @@ impl Memory {
         return self.ram[address as usize];
     }
 
-    pub fn readWord(&mut self, address:u16) -> u16 {
+    pub fn readWord(&self, address:u16) -> u16 {
         let c1 = self.readByte(address);
         let c2 = self.readByte(address + 1);
         return ((c2 as u16) << 8) | c1 as u16;

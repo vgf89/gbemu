@@ -8,22 +8,21 @@ pub const MAX_CLOCK:u32 = 69905; // Number of cycles per frame
 use crate::cpu::*;
 use crate::memory::*;
 use std::rc::Rc;
+use std::cell::RefCell;
 pub struct Gameboy {
     pub clock:u32,
     pub frames:u32,
-    pub ram: Rc<Memory>,
     pub processor: CPU,
 }
 
 impl Gameboy {
     pub fn new() -> Self {
-        let mem: Rc<Memory> = Rc::new(Memory::default());
-        let proc = CPU::new(Rc::clone(&mem));
+        let mem: RefCell<Memory> = RefCell::new(Memory::default());
+        let mut proc = CPU::new(mem);
 
         return Self {
             clock: 0,
             frames: 0,
-            ram: mem,
             processor: proc,
         }
     }
