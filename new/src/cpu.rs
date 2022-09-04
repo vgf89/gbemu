@@ -654,9 +654,9 @@ impl CPU {
     }
     pub fn reti(&mut self)
     {
-        //self.ret(); FIXME: Impleent ret
+        self.ret();
         self.ei();
-        //IME_flag = 1;
+        //IME_flag = 1; // What?
     }
     
     pub fn halt(&mut self) {
@@ -814,15 +814,11 @@ impl CPU {
     }
 
     pub fn cb(&mut self, opcode: u8) {
-        // FIXME
-        //struct instruction ins = CB_instructions[opcode];
         let inst: &instruction = &ops_table::CB_instructions[opcode as usize];
         match &inst.execute {
             FnEnum::OpLen1(op) => (op)(self),
             _ => println!("missing CB prefixed opcode: {}", opcode),
         }
-    
-        //((void(*)())ins.execute)();*/
     }
 
     pub fn ld_a_np(&mut self, address: u8) {
@@ -1027,6 +1023,146 @@ impl CPU {
         let new_hlp = self.rr_r(cur_hlp);
         self.memory.borrow_mut().writeByte(address, new_hlp);
     }
+
+    pub fn sla_r(&mut self, r: u8) -> u8 {
+        // Left shift on gameboy is r.0 = 0. This should match *unsigned* shift left in C99.
+        // TODO: Verify correct behavior.
+        let mut ret_r = r;
+        let carry = (ret_r & (1 << 7)) != 0;
+        ret_r <<= 1;
+
+        self.flags_clear(FLAGS_ZERO);
+        self.flags_clear(FLAGS_NEGATIVE);
+        self.flags_clear(FLAGS_HALFCARRY);
+        self.flags_clear(FLAGS_CARRY);
+
+        if ret_r == 0 {
+            self.flags_set(FLAGS_ZERO);
+        }
+        if carry {
+            self.flags_set(FLAGS_CARRY);
+        }
+
+        return ret_r;
+    }
+    pub fn sla_a(&mut self) { self.a = self.sla_r(self.a); }
+    pub fn sla_b(&mut self) { self.b = self.sla_r(self.b); }
+    pub fn sla_c(&mut self) { self.c = self.sla_r(self.c); }
+    pub fn sla_d(&mut self) { self.d = self.sla_r(self.d); }
+    pub fn sla_e(&mut self) { self.e = self.sla_r(self.e); }
+    pub fn sla_h(&mut self) { self.h = self.sla_r(self.h); }
+    pub fn sla_l(&mut self) { self.l = self.sla_r(self.l); }
+    pub fn sla_hlp(&mut self) {
+        let address = self.hl();
+        let cur_hlp = self.memory.borrow_mut().readByte(address);
+        let new_hlp = self.sla_r(cur_hlp);
+        self.memory.borrow_mut().writeByte(address, new_hlp);
+    }
+
+
+    pub fn sra_r(&mut self, r: u8) -> u8 {
+        // SRA on gameboy is right shift with r.7 = old r.7
+        // This should match *signed* right shift in C99.
+        // TODO: Verify correct behavior.
+        let mut ret_r = r;
+        let carry = (ret_r & 1) != 0;
+        ret_r >>= 1;
+
+        self.flags_clear(FLAGS_ZERO);
+        self.flags_clear(FLAGS_NEGATIVE);
+        self.flags_clear(FLAGS_HALFCARRY);
+        self.flags_clear(FLAGS_CARRY);
+
+        if ret_r == 0 {
+            self.flags_set(FLAGS_ZERO);
+        }
+        if carry {
+            self.flags_set(FLAGS_CARRY);
+        }
+
+        return ret_r;
+    }
+    pub fn sra_a(&mut self) { self.a = self.sra_r(self.a); }
+    pub fn sra_b(&mut self) { self.b = self.sra_r(self.b); }
+    pub fn sra_c(&mut self) { self.c = self.sra_r(self.c); }
+    pub fn sra_d(&mut self) { self.d = self.sra_r(self.d); }
+    pub fn sra_e(&mut self) { self.e = self.sra_r(self.e); }
+    pub fn sra_h(&mut self) { self.h = self.sra_r(self.h); }
+    pub fn sra_l(&mut self) { self.l = self.sra_r(self.l); }
+    pub fn sra_hlp(&mut self) {
+        let address = self.hl();
+        let cur_hlp = self.memory.borrow_mut().readByte(address);
+        let new_hlp = self.sra_r(cur_hlp);
+        self.memory.borrow_mut().writeByte(address, new_hlp);
+    }
+
+    pub fn swap_r(&mut self, r: u8) -> u8 {
+        let lsb_nibble = r & 0x0f;
+        let msb_nibble = r & 0xf0;
+        let ret_r = (lsb_nibble << 4) | (msb_nibble >> 4);
+
+        self.flags_clear(FLAGS_ZERO);
+        self.flags_clear(FLAGS_NEGATIVE);
+        self.flags_clear(FLAGS_HALFCARRY);
+        self.flags_clear(FLAGS_CARRY);
+
+        if ret_r == 0 {
+            self.flags_set(FLAGS_ZERO);
+        }
+
+        return ret_r;
+    }
+    pub fn swap_a(&mut self) { self.a = self.swap_r(self.a); }
+    pub fn swap_b(&mut self) { self.b = self.swap_r(self.b); }
+    pub fn swap_c(&mut self) { self.c = self.swap_r(self.c); }
+    pub fn swap_d(&mut self) { self.d = self.swap_r(self.d); }
+    pub fn swap_e(&mut self) { self.e = self.swap_r(self.e); }
+    pub fn swap_h(&mut self) { self.h = self.swap_r(self.h); }
+    pub fn swap_l(&mut self) { self.l = self.swap_r(self.l); }
+    pub fn swap_hlp(&mut self) {
+        let address = self.hl();
+        let cur_hlp = self.memory.borrow_mut().readByte(address);
+        let new_hlp = self.swap_r(cur_hlp);
+        self.memory.borrow_mut().writeByte(address, new_hlp);
+    }
+
+
+    pub fn srl_r(&mut self, r: u8) -> u8 {
+        // SRL on gameboy is right shift with r.7 = 0
+        // This should match *unsigned* shift right in C99.
+        // TODO: Verify correct behavior.
+        let mut ret_r = r;
+        let carry = (ret_r & 1) != 0;
+        ret_r >>= 1;
+
+        self.flags_clear(FLAGS_ZERO);
+        self.flags_clear(FLAGS_NEGATIVE);
+        self.flags_clear(FLAGS_HALFCARRY);
+        self.flags_clear(FLAGS_CARRY);
+
+        if ret_r == 0 {
+            self.flags_set(FLAGS_ZERO);
+        }
+        if carry {
+            self.flags_set(FLAGS_CARRY);
+        }
+
+        return ret_r;
+    }
+    pub fn srl_a(&mut self) { self.a = self.srl_r(self.a); }
+    pub fn srl_b(&mut self) { self.b = self.srl_r(self.b); }
+    pub fn srl_c(&mut self) { self.c = self.srl_r(self.c); }
+    pub fn srl_d(&mut self) { self.d = self.srl_r(self.d); }
+    pub fn srl_e(&mut self) { self.e = self.srl_r(self.e); }
+    pub fn srl_h(&mut self) { self.h = self.srl_r(self.h); }
+    pub fn srl_l(&mut self) { self.l = self.srl_r(self.l); }
+    pub fn srl_hlp(&mut self) {
+        let address = self.hl();
+        let cur_hlp = self.memory.borrow_mut().readByte(address);
+        let new_hlp = self.srl_r(cur_hlp);
+        self.memory.borrow_mut().writeByte(address, new_hlp);
+    }
+    
 
 }
 
