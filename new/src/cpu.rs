@@ -147,25 +147,6 @@ impl CPU {
     pub fn inc_b(&mut self) { self.b += 1; }
     pub fn dec_b(&mut self) { self.b -= 1; }
     pub fn ld_b_n(&mut self, value: u8) {self.b = value;}
-    pub fn rlc_r(&mut self, r: u8) -> u8 {
-        let mut ret_r = r;
-        let msb: u8 = ((ret_r & (1<<7)) != 0) as u8;
-        ret_r <<= 1;
-        ret_r |= msb;
-    
-        self.flags_clear(FLAGS_ZERO);
-        self.flags_clear(FLAGS_NEGATIVE);
-        self.flags_clear(FLAGS_HALFCARRY);
-        self.flags_clear(FLAGS_CARRY);
-        if msb == 1 {
-            self.flags_set(FLAGS_CARRY);
-        }
-        if ret_r == 0
-        {
-            self.flags_set(FLAGS_ZERO);
-        }
-        return ret_r;
-    }
     pub fn rlca(&mut self) {
         {
             self.a = self.rlc_r(self.a);
@@ -185,38 +166,6 @@ impl CPU {
     pub fn dec_c(&mut self) { self.c -= 1; }
     pub fn ld_c_n(&mut self, value: u8) { self.c = value; }
 
-    pub fn rrc_r(&mut self, r: u8) -> u8 {
-        let lsb: bool = (r & 1) != 0;
-        let mut ret_r = r;
-        ret_r >>= 1;
-        ret_r |= (lsb as u8) << 7;
-    
-        self.flags_clear(FLAGS_ZERO);
-        self.flags_clear(FLAGS_NEGATIVE);
-        self.flags_clear(FLAGS_HALFCARRY);
-        self.flags_clear(FLAGS_CARRY);
-        if lsb {
-            self.flags_set(FLAGS_CARRY);
-        }
-        if ret_r == 0 {
-            self.flags_set(FLAGS_ZERO);
-        }
-
-        return ret_r;
-    }
-    pub fn rrc_a(&mut self) { self.a = self.rrc_r(self.a); }
-    pub fn rrc_b(&mut self) { self.b = self.rrc_r(self.b); }
-    pub fn rrc_c(&mut self) { self.c = self.rrc_r(self.c); }
-    pub fn rrc_d(&mut self) { self.d = self.rrc_r(self.d); }
-    pub fn rrc_e(&mut self) { self.e = self.rrc_r(self.e); }
-    pub fn rrc_h(&mut self) { self.h = self.rrc_r(self.h); }
-    pub fn rrc_l(&mut self) { self.l = self.rrc_r(self.l); }
-    pub fn rrc_hlp(&mut self) {
-        let address = self.hl();
-        let cur_hlp = self.memory.borrow_mut().readByte(address);
-        let new_hl = self.rrc_r(cur_hlp);
-        self.memory.borrow_mut().writeByte(address, new_hl);
-    }
     pub fn rrca(&mut self) {
         self.rrc_a();
         self.flags_clear(FLAGS_ZERO);
@@ -231,44 +180,6 @@ impl CPU {
     pub fn dec_d(&mut self) { self.d -= 1; }
     pub fn ld_d_n(&mut self, value: u8) {self.d = value;}
 
-    pub fn rl_r(&mut self, r: u8) -> u8 {
-        // tmp = MSB
-        let tmp: u8 = r & (1 << 7);
-        // r << 1
-        let mut ret_r = r;
-        ret_r <<= 1;
-        // LSB = Carry
-        ret_r |= self.flags_is_carry() as u8;
-        // Carry = tmp
-    
-        self.flags_clear(FLAGS_ZERO);
-        self.flags_clear(FLAGS_NEGATIVE);
-        self.flags_clear(FLAGS_HALFCARRY);
-        self.flags_clear(FLAGS_CARRY);
-    
-        if tmp != 0 {
-            self.flags_set(FLAGS_CARRY);
-        }
-    
-        if ret_r == 0 {
-            self.flags_set(FLAGS_ZERO);
-        }
-
-        return ret_r
-    }
-    pub fn rl_a(&mut self) { self.a = self.rl_r(self.a); }
-    pub fn rl_b(&mut self) { self.b = self.rl_r(self.b); }
-    pub fn rl_c(&mut self) { self.c = self.rl_r(self.c); }
-    pub fn rl_d(&mut self) { self.d = self.rl_r(self.d); }
-    pub fn rl_e(&mut self) { self.e = self.rl_r(self.e); }
-    pub fn rl_h(&mut self) { self.h = self.rl_r(self.h); }
-    pub fn rl_l(&mut self) { self.l = self.rl_r(self.l); }
-    pub fn rl_hlp(&mut self) {
-        let address = self.hl();
-        let cur_hlp = self.memory.borrow_mut().readByte(address);
-        let new_hl = self.rl_r(cur_hlp);
-        self.memory.borrow_mut().writeByte(address, new_hl);
-    }
     pub fn rla(&mut self) {
         self.rl_a();
         self.flags_clear(FLAGS_ZERO);
@@ -284,44 +195,7 @@ impl CPU {
     pub fn dec_e(&mut self) { self.e -= 1; }
     pub fn ld_e_n(&mut self, value: u8) { self.c = value; }
 
-    pub fn rr_r(&mut self, r: u8) -> u8 {
-        let mut ret_r = r;
-        // lsb = r.0
-        let lsb: bool = (ret_r & 1) == 1;
-        // r >> 1
-        ret_r >>= 1;
-        // MSB = Carry
-        ret_r |= (self.flags_is_carry() as u8) << 7;
-        // Carry = tmp
     
-        self.flags_clear(FLAGS_ZERO);
-        self.flags_clear(FLAGS_NEGATIVE);
-        self.flags_clear(FLAGS_HALFCARRY);
-        self.flags_clear(FLAGS_CARRY);
-    
-        if lsb {
-            self.flags_set(FLAGS_CARRY);
-        }
-    
-        if ret_r == 0 {
-            self.flags_set(FLAGS_ZERO);
-        }
-
-        return ret_r;
-    }
-    pub fn rr_a(&mut self) { self.a = self.rr_r(self.a); }
-    pub fn rr_b(&mut self) { self.b = self.rr_r(self.b); }
-    pub fn rr_c(&mut self) { self.c = self.rr_r(self.c); }
-    pub fn rr_d(&mut self) { self.d = self.rr_r(self.d); }
-    pub fn rr_e(&mut self) { self.e = self.rr_r(self.e); }
-    pub fn rr_h(&mut self) { self.h = self.rr_r(self.h); }
-    pub fn rr_l(&mut self) { self.l = self.rr_r(self.l); }
-    pub fn rr_hlp(&mut self) {
-        let address = self.hl();
-        let cur_hlp = self.memory.borrow_mut().readByte(address);
-        let new_hl = self.rr_r(cur_hlp);
-        self.memory.borrow_mut().writeByte(address, new_hl);
-    }
     pub fn rra(&mut self) {
         self.rr_a();
         self.flags_clear(FLAGS_ZERO);
@@ -941,14 +815,14 @@ impl CPU {
 
     pub fn cb(&mut self, opcode: u8) {
         // FIXME
-        /*struct instruction ins = CB_instructions[opcode];
-        if (ins.execute == NULL) {
-            //printf("unimplemented CB prefixed instruction: $%02X  ", opcode);
-            //printf(ins.disas);
-            exit(0);
+        //struct instruction ins = CB_instructions[opcode];
+        let inst: &instruction = &ops_table::CB_instructions[opcode as usize];
+        match &inst.execute {
+            FnEnum::OpLen1(op) => (op)(self),
+            _ => println!("missing CB prefixed opcode: {}", opcode),
         }
     
-        ((void(*)())ins.execute)();*/
+        //((void(*)())ins.execute)();*/
     }
 
     pub fn ld_a_np(&mut self, address: u8) {
@@ -1005,6 +879,153 @@ impl CPU {
             self.flags_set(FLAGS_CARRY);
         }
         self.set_hl(self.sp + value as u16);
+    }
+
+
+
+    /***** CB Instructions *****/
+    pub fn rlc_r(&mut self, r: u8) -> u8 {
+        let mut ret_r = r;
+        let msb: u8 = ((ret_r & (1<<7)) != 0) as u8;
+        ret_r <<= 1;
+        ret_r |= msb;
+    
+        self.flags_clear(FLAGS_ZERO);
+        self.flags_clear(FLAGS_NEGATIVE);
+        self.flags_clear(FLAGS_HALFCARRY);
+        self.flags_clear(FLAGS_CARRY);
+        if msb == 1 {
+            self.flags_set(FLAGS_CARRY);
+        }
+        if ret_r == 0
+        {
+            self.flags_set(FLAGS_ZERO);
+        }
+        return ret_r;
+    }
+    pub fn rlc_a(&mut self) { self.a = self.rlc_r(self.a); }
+    pub fn rlc_b(&mut self) { self.b = self.rlc_r(self.a); }
+    pub fn rlc_c(&mut self) { self.c = self.rlc_r(self.a); }
+    pub fn rlc_d(&mut self) { self.d = self.rlc_r(self.a); }
+    pub fn rlc_e(&mut self) { self.e = self.rlc_r(self.a); }
+    pub fn rlc_h(&mut self) { self.h = self.rlc_r(self.a); }
+    pub fn rlc_l(&mut self) { self.l = self.rlc_r(self.a); }
+    pub fn rlc_hlp(&mut self) {
+        let address = self.hl();
+        let cur_hlp = self.memory.borrow_mut().readByte(address);
+        let new_hlp = self.rlc_r(cur_hlp);
+        self.memory.borrow_mut().writeByte(address, new_hlp);
+    }
+
+    pub fn rrc_r(&mut self, r: u8) -> u8 {
+        let lsb: bool = (r & 1) != 0;
+        let mut ret_r = r;
+        ret_r >>= 1;
+        ret_r |= (lsb as u8) << 7;
+    
+        self.flags_clear(FLAGS_ZERO);
+        self.flags_clear(FLAGS_NEGATIVE);
+        self.flags_clear(FLAGS_HALFCARRY);
+        self.flags_clear(FLAGS_CARRY);
+        if lsb {
+            self.flags_set(FLAGS_CARRY);
+        }
+        if ret_r == 0 {
+            self.flags_set(FLAGS_ZERO);
+        }
+
+        return ret_r;
+    }
+    pub fn rrc_a(&mut self) { self.a = self.rrc_r(self.a); }
+    pub fn rrc_b(&mut self) { self.b = self.rrc_r(self.b); }
+    pub fn rrc_c(&mut self) { self.c = self.rrc_r(self.c); }
+    pub fn rrc_d(&mut self) { self.d = self.rrc_r(self.d); }
+    pub fn rrc_e(&mut self) { self.e = self.rrc_r(self.e); }
+    pub fn rrc_h(&mut self) { self.h = self.rrc_r(self.h); }
+    pub fn rrc_l(&mut self) { self.l = self.rrc_r(self.l); }
+    pub fn rrc_hlp(&mut self) {
+        let address = self.hl();
+        let cur_hlp = self.memory.borrow_mut().readByte(address);
+        let new_hlp = self.rrc_r(cur_hlp);
+        self.memory.borrow_mut().writeByte(address, new_hlp);
+    }
+
+    pub fn rl_r(&mut self, r: u8) -> u8 {
+        // tmp = MSB
+        let tmp: u8 = r & (1 << 7);
+        // r << 1
+        let mut ret_r = r;
+        ret_r <<= 1;
+        // LSB = Carry
+        ret_r |= self.flags_is_carry() as u8;
+        // Carry = tmp
+    
+        self.flags_clear(FLAGS_ZERO);
+        self.flags_clear(FLAGS_NEGATIVE);
+        self.flags_clear(FLAGS_HALFCARRY);
+        self.flags_clear(FLAGS_CARRY);
+    
+        if tmp != 0 {
+            self.flags_set(FLAGS_CARRY);
+        }
+    
+        if ret_r == 0 {
+            self.flags_set(FLAGS_ZERO);
+        }
+
+        return ret_r
+    }
+    pub fn rl_a(&mut self) { self.a = self.rl_r(self.a); }
+    pub fn rl_b(&mut self) { self.b = self.rl_r(self.b); }
+    pub fn rl_c(&mut self) { self.c = self.rl_r(self.c); }
+    pub fn rl_d(&mut self) { self.d = self.rl_r(self.d); }
+    pub fn rl_e(&mut self) { self.e = self.rl_r(self.e); }
+    pub fn rl_h(&mut self) { self.h = self.rl_r(self.h); }
+    pub fn rl_l(&mut self) { self.l = self.rl_r(self.l); }
+    pub fn rl_hlp(&mut self) {
+        let address = self.hl();
+        let cur_hlp = self.memory.borrow_mut().readByte(address);
+        let new_hlp = self.rl_r(cur_hlp);
+        self.memory.borrow_mut().writeByte(address, new_hlp);
+    }
+
+    pub fn rr_r(&mut self, r: u8) -> u8 {
+        let mut ret_r = r;
+        // lsb = r.0
+        let lsb: bool = (ret_r & 1) == 1;
+        // r >> 1
+        ret_r >>= 1;
+        // MSB = Carry
+        ret_r |= (self.flags_is_carry() as u8) << 7;
+        // Carry = tmp
+    
+        self.flags_clear(FLAGS_ZERO);
+        self.flags_clear(FLAGS_NEGATIVE);
+        self.flags_clear(FLAGS_HALFCARRY);
+        self.flags_clear(FLAGS_CARRY);
+    
+        if lsb {
+            self.flags_set(FLAGS_CARRY);
+        }
+    
+        if ret_r == 0 {
+            self.flags_set(FLAGS_ZERO);
+        }
+
+        return ret_r;
+    }
+    pub fn rr_a(&mut self) { self.a = self.rr_r(self.a); }
+    pub fn rr_b(&mut self) { self.b = self.rr_r(self.b); }
+    pub fn rr_c(&mut self) { self.c = self.rr_r(self.c); }
+    pub fn rr_d(&mut self) { self.d = self.rr_r(self.d); }
+    pub fn rr_e(&mut self) { self.e = self.rr_r(self.e); }
+    pub fn rr_h(&mut self) { self.h = self.rr_r(self.h); }
+    pub fn rr_l(&mut self) { self.l = self.rr_r(self.l); }
+    pub fn rr_hlp(&mut self) {
+        let address = self.hl();
+        let cur_hlp = self.memory.borrow_mut().readByte(address);
+        let new_hlp = self.rr_r(cur_hlp);
+        self.memory.borrow_mut().writeByte(address, new_hlp);
     }
 
 }
