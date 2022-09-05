@@ -1,5 +1,5 @@
 // MEMORY_MAP
-pub const memory_size:usize = 0x10000;
+pub const MEMORY_SIZE:usize = 0x10000;
 
 pub const ROM00:u16 = 0x0;                        // $0000-$3fff 16 KiB ROM Bank 00. Usually fixed
 pub const ROMNN:u16 = ROM00 + 0x4000;             // $4000-$7fff 16 KiB ROM Bank NN. Switchable via mapper (if any)
@@ -16,33 +16,33 @@ pub const WRAM2:u16 = WRAM1 + 0x1000;             // $d000-$dfff 4KiB Work RAM (
 pub const ECHORAM:u16 = WRAM2 + 0x1000;           // $e000-$fdff An artifact of how the bus is connected. Mirrors C000~DDFF. Nintendo says use of this area is prohibited.
     // For accuracy, we can remap reads/writes from this location to C000~DFFF
 pub const OAM:u16 = ECHORAM + 0x1E00;             // $fe00-$fe9f Sprite Attribute Table
-pub const unusable:u16 = OAM + 0xA0;              // $fea0-$feff do not touch, just leave it blank unless needed
+pub const UNUSABLE:u16 = OAM + 0xA0;              // $fea0-$feff do not touch, just leave it blank unless needed
 
-pub const IO:u16 = unusable + 0x0060;             // $ff00-$ff7f IO Registers
+pub const IO:u16 = UNUSABLE + 0x0060;             // $ff00-$ff7f IO Registers
 pub const JOYPAD:u16 = IO;                        // $ff00
 pub const SIODATA:u16 = JOYPAD + 1;               // $ff01 [RW] Serial I/O Data
 pub const SIOCONT:u16 = SIODATA + 1;              // $ff02 [RW] Serial I/O Control
-pub const gap0:u16 = SIOCONT + 1;                 // $ff03
-pub const DIV:u16 = gap0 + 1;                     // $ff04 [RW] Unconditional counter register (increases every 256 system clock)
+pub const GAP0:u16 = SIOCONT + 1;                 // $ff03
+pub const DIV:u16 = GAP0 + 1;                     // $ff04 [RW] Unconditional counter register (increases every 256 system clock)
 pub const TIMA:u16 = DIV + 1;                     // $ff05 [RW] Timer Counter (constantly counts up, triggers timer interrupt on overflow)
 pub const TMA:u16 = TIMA + 1;                     // $ff06 [RW] Timer Modulo (loaded into counter whenever counter overflows)
 pub const TAC:u16 = TMA + 1;                      // $ff07 [RW] Timer Control
-pub const gap1:u16 = TAC + 1;                     // $ff08-ff0e
-pub const IFLAGS:u16 = gap1 + 0x0007;             // $ff0f [RW] Interrupt Flags
-pub const sound:u16 = IFLAGS + 1;                 // $ff10-ff26
-pub const gap2:u16 = sound + 0x0017;              // $ff27-29
-pub const waveformRAM:u16 = gap2 + 0x0009;        // $FF30-$FF3F
-pub const LCD:u16 = waveformRAM + 0x0010;         // $ff40-ff4b
-pub const gap3:u16 = LCD + 0x000C;                
-pub const VRAMBankSelect:u16 = gap3 + 0x0003;     // CGB $ff4f
-pub const DisableBootRom:u16 = VRAMBankSelect + 1;// $ff50
-pub const HDMA:u16 = DisableBootRom + 1;          // CGB $ff51
-pub const gap4:u16 = HDMA + 0x0005;
-pub const BCPOCP:u16 = gap4 + 0x0012;             // CGB $ff68
-pub const WRAMBankSelect:u16 = BCPOCP + 0x0008;   // CGB $ff70
-pub const gap5:u16 = WRAMBankSelect + 1;
+pub const GAP1:u16 = TAC + 1;                     // $ff08-ff0e
+pub const IFLAGS:u16 = GAP1 + 0x0007;             // $ff0f [RW] Interrupt Flags
+pub const SOUND:u16 = IFLAGS + 1;                 // $ff10-ff26
+pub const GAP2:u16 = SOUND + 0x0017;              // $ff27-29
+pub const WAVEFORM_RAM:u16 = GAP2 + 0x0009;        // $FF30-$FF3F
+pub const LCD:u16 = WAVEFORM_RAM + 0x0010;         // $ff40-ff4b
+pub const GAP3:u16 = LCD + 0x000C;                
+pub const VRAM_BANK_SELECT:u16 = GAP3 + 0x0003;     // CGB $ff4f
+pub const DISABLE_BOOT_ROM:u16 = VRAM_BANK_SELECT + 1;// $ff50
+pub const HDMA:u16 = DISABLE_BOOT_ROM + 1;          // CGB $ff51
+pub const GAP4:u16 = HDMA + 0x0005;
+pub const BCPOCP:u16 = GAP4 + 0x0012;             // CGB $ff68
+pub const WRAM_BANK_SELECT:u16 = BCPOCP + 0x0008;   // CGB $ff70
+pub const GAP5:u16 = WRAM_BANK_SELECT + 1;
 
-pub const HRAM:u16 = gap5 + 0x000F;   // $ff80-$fffe High RAM
+pub const HRAM:u16 = GAP5 + 0x000F;   // $ff80-$fffe High RAM
 pub const IE:u16 = HRAM + 0x007F;     // $ffff Interrupts Enable Register
 
 
@@ -55,7 +55,7 @@ pub const I_JOYPAD  :u8 = 0x00001;
 
 
 // Mappers
-pub const NoMBC:u8 = 0x00;
+pub const NO_MBC:u8 = 0x00;
 pub const MBC1:u8 = 0x01;
 
 
@@ -63,23 +63,23 @@ pub const MBC1:u8 = 0x01;
 #[derive(Default)]
 pub struct Memory {
     pub ram:Vec<u8>, // 0x10000 addresses
-    cartridgeMode:u8, // FIXME: Rename to cartridge_type
-    MBC1BankNN:u8,
-    MBC1Banks:Vec<[u8; 0x4000]>, // # 125 possible memory banks of 0x4000 size
+    cartridge_type:u8,
+    mbc_1_bank_nn:u8,
+    mbc_1_banks:Vec<[u8; 0x4000]>, // # 125 possible memory banks of 0x4000 size
 }
 impl Memory {
     fn default() -> Self {
         return Self{
             ram: vec![0; 0x10000],
-            cartridgeMode:0u8,
-            MBC1BankNN:0u8,
-            MBC1Banks: vec![[0u8; 0x4000]; 125],
+            cartridge_type:0u8,
+            mbc_1_bank_nn:0u8,
+            mbc_1_banks: vec![[0u8; 0x4000]; 125],
         }
     }
 
-    pub fn readByte(&self, address:u16) -> u8 {
-        if self.cartridgeMode == MBC1 && address >= 0x4000 && address < 0x8000 {
-            return self.MBC1Banks[self.MBC1BankNN as usize][address as usize - 0x4000];
+    pub fn read_byte(&self, address:u16) -> u8 {
+        if self.cartridge_type == MBC1 && address >= 0x4000 && address < 0x8000 {
+            return self.mbc_1_banks[self.mbc_1_bank_nn as usize][address as usize - 0x4000];
         }
         if address >= 0xfea0 && address < 0xff00 {
             return 0xff;
@@ -93,58 +93,58 @@ impl Memory {
         return self.ram[address as usize];
     }
 
-    pub fn readWord(&self, address:u16) -> u16 {
-        let c1 = self.readByte(address);
-        let c2 = self.readByte(address + 1);
+    pub fn read_word(&self, address:u16) -> u16 {
+        let c1 = self.read_byte(address);
+        let c2 = self.read_byte(address + 1);
         return ((c2 as u16) << 8) | c1 as u16;
     }
 
-    pub fn writeByte(&mut self, address:u16, val:u8) {
+    pub fn write_byte(&mut self, address:u16, val:u8) {
         if address == 0xff02 && val == 0x81 {
 
-            print!("{}", self.readByte(0xff01) as char);
+            print!("{}", self.read_byte(0xff01) as char);
         } else if address >= 0xfea0 && address < 0xff00 {
             // Unusable memory, do nothing
         } else if address == 0xff00 {
             // FIXME
             // selectInput(avl)
-        } else if self.cartridgeMode == MBC1 && address >= 0x2000 && address < 0x4000 {
+        } else if self.cartridge_type == MBC1 && address >= 0x2000 && address < 0x4000 {
             let mut newval = val & 0b11111;
             if newval == 0 { // FIXME: is this correct???
                 newval = 1;
             }
-            self.MBC1BankNN = newval;
+            self.mbc_1_bank_nn = newval;
         } else if address >= 0x8000 {
             self.ram[address as usize] = val;
         }
     }
 
-    pub fn writeWord(&mut self, address:u16, val:u16) {
+    pub fn write_word(&mut self, address:u16, val:u16) {
         let c1 = (val & 0xff) as u8;
         let c2 = ((val >> 8) & 0xff) as u8;
-        self.writeByte(address, c1);
-        self.writeByte(address + 1, c2);
+        self.write_byte(address, c1);
+        self.write_byte(address + 1, c2);
     }
 
 
-    pub fn IF_ISSET (&mut self, bitmask:u8) -> u8 {
+    pub fn if_isset (&mut self, bitmask:u8) -> u8 {
         return self.ram[IFLAGS as usize] & bitmask;
     }
-    pub fn IF_SET (&mut self, bitmask:u8) {
+    pub fn if_set (&mut self, bitmask:u8) {
         self.ram[IFLAGS as usize] = self.ram[IFLAGS as usize] | bitmask;
     }
-    pub fn IF_CLEAR (&mut self, bitmask:u8) {
+    pub fn if_clear (&mut self, bitmask:u8) {
         self.ram[IFLAGS as usize] = self.ram[IFLAGS as usize] & !bitmask;
     }
 
     // IE Interrupts Enable Register macros
-    pub fn IE_ISSET (&mut self, bitmask:u8) -> u8{
+    pub fn ie_isset (&mut self, bitmask:u8) -> u8{
         return self.ram[IE as usize] & bitmask;
     }
-    pub fn IE_SET (&mut self, bitmask:u8) {
+    pub fn ie_set (&mut self, bitmask:u8) {
         self.ram[IE as usize] = self.ram[IE as usize] | bitmask;
     }
-    pub fn IE_CLEAR (&mut self, bitmask:u8) {
+    pub fn ie_clear (&mut self, bitmask:u8) {
         self.ram[IE as usize] = self.ram[IE as usize] & !bitmask;
     } 
 }
@@ -160,15 +160,15 @@ mod memory_tests {
     #[test]
     fn test_read_write() {
         let mut memory = Memory::default();
-        memory.writeByte(0x8500, 0b00110101);
+        memory.write_byte(0x8500, 0b00110101);
         assert_eq!(memory.ram[0x8500], 0b00110101);
-        assert_eq!(memory.readByte(0x8500), memory.ram[0x8500]);
+        assert_eq!(memory.read_byte(0x8500), memory.ram[0x8500]);
 
         // FIXME: Verify that bytes are in the correct order
-        memory.writeWord(0x8600, 0xf00d);
-        assert_eq!(memory.readByte(0x8600), 0x0d);
-        assert_eq!(memory.readByte(0x8601), 0xf0);
-        assert_eq!(memory.readWord(0x8600), 0xf00d);
+        memory.write_word(0x8600, 0xf00d);
+        assert_eq!(memory.read_byte(0x8600), 0x0d);
+        assert_eq!(memory.read_byte(0x8601), 0xf0);
+        assert_eq!(memory.read_word(0x8600), 0xf00d);
     }
 
     #[test]
@@ -177,18 +177,18 @@ mod memory_tests {
         memory.ram[IFLAGS as usize] = 0u8;
         memory.ram[IE as usize] = 0u8;
 
-        memory.IF_SET(0b0101);
+        memory.if_set(0b0101);
         assert_eq!(memory.ram[IFLAGS as usize], 0b0101);
-        memory.IF_SET(0b1010);
+        memory.if_set(0b1010);
         assert_eq!(memory.ram[IFLAGS as usize], 0b1111);
-        memory.IF_CLEAR(0b0011);
+        memory.if_clear(0b0011);
         assert_eq!(memory.ram[IFLAGS as usize], 0b1100);
 
-        memory.IE_SET(0b0101);
+        memory.ie_set(0b0101);
         assert_eq!(memory.ram[IE as usize], 0b0101);
-        memory.IE_SET(0b1010);
+        memory.ie_set(0b1010);
         assert_eq!(memory.ram[IE as usize], 0b1111);
-        memory.IE_CLEAR(0b0011);
+        memory.ie_clear(0b0011);
         assert_eq!(memory.ram[IE as usize], 0b1100);
     }
 
@@ -206,30 +206,30 @@ mod memory_tests {
         assert_eq!(WRAM2, 0xd000);
         assert_eq!(ECHORAM, 0xe000);
         assert_eq!(OAM, 0xfe00);
-        assert_eq!(unusable, 0xfea0);
+        assert_eq!(UNUSABLE, 0xfea0);
         assert_eq!(IO, 0xff00);
         assert_eq!(JOYPAD, 0xff00);
         assert_eq!(SIODATA, 0xff01);
         assert_eq!(SIOCONT, 0xff02);
-        assert_eq!(gap0, 0xff03);
+        assert_eq!(GAP0, 0xff03);
         assert_eq!(DIV, 0xff04);
         assert_eq!(TIMA, 0xff05);
         assert_eq!(TMA, 0xff06);
         assert_eq!(TAC, 0xff07);
-        assert_eq!(gap1, 0xff08);
+        assert_eq!(GAP1, 0xff08);
         assert_eq!(IFLAGS, 0xff0f);
-        assert_eq!(sound, 0xff10);
-        assert_eq!(gap2, 0xff27);
-        assert_eq!(waveformRAM, 0xFF30);
+        assert_eq!(SOUND, 0xff10);
+        assert_eq!(GAP2, 0xff27);
+        assert_eq!(WAVEFORM_RAM, 0xFF30);
         assert_eq!(LCD, 0xff40);
-        assert_eq!(gap3, 0xff4c);
-        assert_eq!(VRAMBankSelect, 0xff4f);
-        assert_eq!(DisableBootRom, 0xff50);
+        assert_eq!(GAP3, 0xff4c);
+        assert_eq!(VRAM_BANK_SELECT, 0xff4f);
+        assert_eq!(DISABLE_BOOT_ROM, 0xff50);
         assert_eq!(HDMA, 0xff51);
-        assert_eq!(gap4, 0xff56);
+        assert_eq!(GAP4, 0xff56);
         assert_eq!(BCPOCP, 0xff68);
-        assert_eq!(WRAMBankSelect, 0xff70);
-        assert_eq!(gap5, 0xff71);
+        assert_eq!(WRAM_BANK_SELECT, 0xff70);
+        assert_eq!(GAP5, 0xff71);
         assert_eq!(HRAM, 0xff80);
         assert_eq!(IE, 0xffff);
     }

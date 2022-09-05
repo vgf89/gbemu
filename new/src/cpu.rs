@@ -1,5 +1,5 @@
 use crate::{memory::*, ops_table};
-use std::{rc::Rc, cell::RefCell};
+use std::{cell::RefCell};
 use crate::ops_table::*;
 
 #[derive(Default)]
@@ -18,7 +18,7 @@ pub struct CPU {
 
     // Auxiiliary stuff
     pub clock: u32,
-    pub IME_flag: bool,
+    pub ime_flag: bool,
     pub set_ei: u8,
     pub res_ei: u8 ,
     pub halted: bool,
@@ -47,7 +47,7 @@ impl CPU {
             pc: 0,
 
             clock: 0,
-            IME_flag: true,
+            ime_flag: true,
             set_ei: 0,
             res_ei: 0,
             halted: false,
@@ -88,6 +88,12 @@ impl CPU {
         self.h = ((value >> 8) & 0xff) as u8;
         self.l = (value & 0xff) as u8;
     }
+    fn hlp(&self) -> u8 {
+        return self.memory.borrow().read_byte(self.hl());
+    }
+    fn set_hlp(&mut self, val: u8) {
+        self.memory.borrow_mut().write_byte(self.hl(), val);
+    }
 
     pub fn flags_is_zero(&self) -> bool{
         return self.f & FLAGS_ZERO != 0;
@@ -117,10 +123,10 @@ impl CPU {
     }
 
     // CPU stepper
-    pub fn cpuStep(&mut self) {
+    pub fn cpu_step(&mut self) {
         // FIXME: Implement
 
-        let inst: &instruction = &ops_table::instructions[0];
+        let inst: &Instruction = &ops_table::INSTRUCTIONS[0];
         match &inst.execute {
             FnEnum::OpLen1(op) => (op)(self),
             FnEnum::OpLen2(op) => (op)(self, 0u8), // FIXME: Get value
@@ -142,7 +148,7 @@ impl CPU {
     }
 
     pub fn ld_bc_nn(&mut self, value: u16) { self.set_bc(value); }
-    pub fn ld_bcp_a(&mut self) { self.memory.borrow_mut().writeByte(self.bc(), self.a); }
+    pub fn ld_bcp_a(&mut self) { self.memory.borrow_mut().write_byte(self.bc(), self.a); }
     pub fn inc_bc(&mut self) { self.set_bc(self.bc() + 1); }
     pub fn inc_b(&mut self) { self.b += 1; }
     pub fn dec_b(&mut self) { self.b -= 1; }
@@ -155,12 +161,12 @@ impl CPU {
         self.flags_clear(FLAGS_NEGATIVE);
         self.flags_clear(FLAGS_HALFCARRY);
     }
-    pub fn ld_nnp_sp(&mut self, address: u16) { self.memory.borrow_mut().writeWord(address, self.sp); }
+    pub fn ld_nnp_sp(&mut self, address: u16) { self.memory.borrow_mut().write_word(address, self.sp); }
     pub fn add_hl_nn(&mut self, nn: u16) {
         self.set_hl(self.hl() + nn);
     }
     pub fn add_hl_bc(&mut self) { self.add_hl_nn(self.bc()); }
-    pub fn ld_a_bcp(&mut self) { self.a = self.memory.borrow_mut().readByte(self.bc()); }
+    pub fn ld_a_bcp(&mut self) { self.a = self.memory.borrow_mut().read_byte(self.bc()); }
     pub fn dec_bc(&mut self) { self.set_bc(self.bc() - 1); }
     pub fn inc_c(&mut self) { self.c += 1; }
     pub fn dec_c(&mut self) { self.c -= 1; }
@@ -174,7 +180,7 @@ impl CPU {
     }
 
     pub fn ld_de_nn(&mut self, value: u16) { self.set_de(value); }
-    pub fn ld_dep_a(&mut self) { self.memory.borrow_mut().writeByte(self.de(), self.a); }
+    pub fn ld_dep_a(&mut self) { self.memory.borrow_mut().write_byte(self.de(), self.a); }
     pub fn inc_de(&mut self) { self.set_de(self.de() + 1); }
     pub fn inc_d(&mut self) { self.d += 1; }
     pub fn dec_d(&mut self) { self.d -= 1; }
@@ -189,7 +195,7 @@ impl CPU {
 
     pub fn jr_nn(&mut self, offset: i8) { self.pc = self.pc.wrapping_add(offset as u16); }
     pub fn add_hl_de(&mut self) { self.add_hl_nn(self.de()); }
-    pub fn ld_a_dep(&mut self) { self.a = self.memory.borrow_mut().readByte(self.de()); }
+    pub fn ld_a_dep(&mut self) { self.a = self.memory.borrow_mut().read_byte(self.de()); }
     pub fn dec_de(&mut self) { self.set_de(self.de() - 1); }
     pub fn inc_e(&mut self) { self.e += 1; }
     pub fn dec_e(&mut self) { self.e -= 1; }
@@ -214,7 +220,7 @@ impl CPU {
         self.set_hl(value);
     }
     pub fn ldi_hlp_a(&mut self) {
-        self.memory.borrow_mut().writeByte(self.hl(), self.a);
+        self.set_hlp(self.a);
         self.set_hl(self.hl() + 1);
     }
     pub fn inc_hl(&mut self) { self.set_hl(self.hl() + 1); }
@@ -261,7 +267,7 @@ impl CPU {
     }
 
     pub fn ldi_a_hlp(&mut self) {
-        self.a = self.memory.borrow_mut().readByte(self.hl());
+        self.a = self.hlp();
         self.set_hl(self.hl() + 1);
     }
 
@@ -283,20 +289,20 @@ impl CPU {
 
     pub fn ld_sp_nn(&mut self, value: u16) { self.sp = value; }
     pub fn ldd_hlp_a(&mut self) {
-        self.memory.borrow_mut().writeByte(self.hl(), self.a);
+        self.set_hlp(self.a);
         self.set_hl(self.hl() - 1);
     }
     pub fn inc_sp(&mut self) {
         self.sp += 1;
     }
     pub fn inc_hlp(&mut self) {
-        self.memory.borrow_mut().writeByte(self.hl(), self.memory.borrow_mut().readByte(self.hl()) + 1);
+        self.set_hlp(self.hlp() + 1);
     }
     pub fn dec_hlp(&mut self) {
-        self.memory.borrow_mut().writeByte(self.hl(), self.memory.borrow_mut().readByte(self.hl()) - 1);
+        self.set_hlp(self.hlp() - 1);
     }
     pub fn ld_hlp_n(&mut self, value: u8) {
-        self.memory.borrow_mut().writeByte(self.hl(), value);
+        self.set_hlp(value);
     }
     pub fn scf(&mut self) {
         self.flags_clear(FLAGS_NEGATIVE);
@@ -313,7 +319,7 @@ impl CPU {
         self.set_hl(self.sp);
     }
     pub fn ldd_a_hlp(&mut self) {
-        self.a = self.memory.borrow_mut().readByte(self.hl());
+        self.a = self.hlp();
         self.set_hl(self.hl() - 1);
     }
     pub fn dec_sp(&mut self) {
@@ -347,7 +353,7 @@ impl CPU {
     pub fn ld_b_e(&mut self) { self.b = self.e; }
     pub fn ld_b_h(&mut self) { self.b = self.h; }
     pub fn ld_b_l(&mut self) { self.b = self.l; }
-    pub fn ld_b_hlp(&mut self) { self.b = self.memory.borrow_mut().readByte(self.hl()); }
+    pub fn ld_b_hlp(&mut self) { self.b = self.hlp(); }
     pub fn ld_b_a(&mut self) { self.b = self.a; }
 
     pub fn ld_c_b(&mut self) { self.c = self.b; }
@@ -356,7 +362,7 @@ impl CPU {
     pub fn ld_c_e(&mut self) { self.c = self.e; }
     pub fn ld_c_h(&mut self) { self.c = self.h; }
     pub fn ld_c_l(&mut self) { self.c = self.l; }
-    pub fn ld_c_hlp(&mut self) { self.c = self.memory.borrow_mut().readByte(self.hl()); }
+    pub fn ld_c_hlp(&mut self) { self.c = self.hlp(); }
     pub fn ld_c_a(&mut self) { self.c = self.a; }
 
     pub fn ld_d_b(&mut self) { self.d = self.b; }
@@ -365,7 +371,7 @@ impl CPU {
     pub fn ld_d_e(&mut self) { self.d = self.e; }
     pub fn ld_d_h(&mut self) { self.d = self.h; }
     pub fn ld_d_l(&mut self) { self.d = self.l; }
-    pub fn ld_d_hlp(&mut self) { self.d = self.memory.borrow_mut().readByte(self.hl()); }
+    pub fn ld_d_hlp(&mut self) { self.d = self.hlp(); }
     pub fn ld_d_a(&mut self) { self.d = self.a; }
 
     pub fn ld_e_b(&mut self) { self.e = self.b; }
@@ -374,7 +380,7 @@ impl CPU {
     pub fn ld_e_e(&mut self) { self.e = self.e; }
     pub fn ld_e_h(&mut self) { self.e = self.h; }
     pub fn ld_e_l(&mut self) { self.e = self.l; }
-    pub fn ld_e_hlp(&mut self) { self.e = self.memory.borrow_mut().readByte(self.hl()); }
+    pub fn ld_e_hlp(&mut self) { self.e = self.hlp(); }
     pub fn ld_e_a(&mut self) { self.e = self.a; }
 
     pub fn ld_h_b(&mut self) { self.h = self.b; }
@@ -383,7 +389,7 @@ impl CPU {
     pub fn ld_h_e(&mut self) { self.h = self.e; }
     pub fn ld_h_h(&mut self) { self.h = self.h; }
     pub fn ld_h_l(&mut self) { self.h = self.l; }
-    pub fn ld_h_hlp(&mut self) { self.h = self.memory.borrow_mut().readByte(self.hl()); }
+    pub fn ld_h_hlp(&mut self) { self.h = self.hlp(); }
     pub fn ld_h_a(&mut self) { self.h = self.a; }
 
     pub fn ld_l_b(&mut self) { self.l = self.b; }
@@ -392,16 +398,16 @@ impl CPU {
     pub fn ld_l_e(&mut self) { self.l = self.e; }
     pub fn ld_l_h(&mut self) { self.l = self.h; }
     pub fn ld_l_l(&mut self) { self.l = self.l; }
-    pub fn ld_l_hlp(&mut self) { self.l = self.memory.borrow_mut().readByte(self.hl()); }
+    pub fn ld_l_hlp(&mut self) { self.l = self.hlp(); }
     pub fn ld_l_a(&mut self) { self.l = self.a; }
 
-    pub fn ld_hlp_b(&mut self) { self.memory.borrow_mut().writeByte(self.hl(), self.b); }
-    pub fn ld_hlp_c(&mut self) { self.memory.borrow_mut().writeByte(self.hl(), self.c); }
-    pub fn ld_hlp_d(&mut self) { self.memory.borrow_mut().writeByte(self.hl(), self.d); }
-    pub fn ld_hlp_e(&mut self) { self.memory.borrow_mut().writeByte(self.hl(), self.e); }
-    pub fn ld_hlp_h(&mut self) { self.memory.borrow_mut().writeByte(self.hl(), self.h); }
-    pub fn ld_hlp_l(&mut self) { self.memory.borrow_mut().writeByte(self.hl(), self.l); }
-    pub fn ld_hlp_a(&mut self) { self.memory.borrow_mut().writeByte(self.hl(), self.a); }
+    pub fn ld_hlp_b(&mut self) { self.set_hlp(self.b); }
+    pub fn ld_hlp_c(&mut self) { self.set_hlp(self.c); }
+    pub fn ld_hlp_d(&mut self) { self.set_hlp(self.d); }
+    pub fn ld_hlp_e(&mut self) { self.set_hlp(self.e); }
+    pub fn ld_hlp_h(&mut self) { self.set_hlp(self.h); }
+    pub fn ld_hlp_l(&mut self) { self.set_hlp(self.l); }
+    pub fn ld_hlp_a(&mut self) { self.set_hlp(self.a); }
 
     pub fn ld_a_b(&mut self) { self.a = self.b; }
     pub fn ld_a_c(&mut self) { self.a = self.c; }
@@ -409,7 +415,7 @@ impl CPU {
     pub fn ld_a_e(&mut self) { self.a = self.e; }
     pub fn ld_a_h(&mut self) { self.a = self.h; }
     pub fn ld_a_l(&mut self) { self.a = self.l; }
-    pub fn ld_a_hlp(&mut self) { self.a = self.memory.borrow_mut().readByte(self.hl()); }
+    pub fn ld_a_hlp(&mut self) { self.a = self.hlp(); }
     pub fn ld_a_a(&mut self) { self.a = self.a; }
 
     pub fn add_a_n(&mut self, n: u8) {
@@ -435,7 +441,7 @@ impl CPU {
     pub fn add_a_h(&mut self) { self.add_a_n(self.h); }
     pub fn add_a_l(&mut self) { self.add_a_n(self.l); }
     pub fn add_a_hlp(&mut self) { 
-        let hlp = self.memory.borrow_mut().readByte(self.hl());
+        let hlp = self.hlp();
         self.add_a_n(hlp);
     }
     pub fn add_a_a(&mut self) { self.add_a_n(self.a); }
@@ -464,7 +470,7 @@ impl CPU {
     pub fn adc_a_h(&mut self) { self.adc_a_n(self.h); }
     pub fn adc_a_l(&mut self) { self.adc_a_n(self.l); }
     pub fn adc_a_hlp(&mut self) {
-        let hlp = self.memory.borrow_mut().readByte(self.hl());
+        let hlp = self.hlp();
         self.adc_a_n(hlp);
     }
     pub fn adc_a_a(&mut self) { self.adc_a_n(self.a); }
@@ -494,7 +500,7 @@ impl CPU {
     pub fn sub_a_h(&mut self) { self.sub_a_n(self.h); }
     pub fn sub_a_l(&mut self) { self.sub_a_n(self.l); }
     pub fn sub_a_hlp(&mut self) {
-        let hlp = self.memory.borrow_mut().readByte(self.hl());
+        let hlp = self.hlp();
         self.sub_a_n(hlp);
     }
     pub fn sub_a_a(&mut self) { self.sub_a_n(self.a); }
@@ -524,7 +530,7 @@ impl CPU {
     pub fn sbc_a_h(&mut self) { self.sbc_a_n(self.h); }
     pub fn sbc_a_l(&mut self) { self.sbc_a_n(self.l); }
     pub fn sbc_a_hlp(&mut self) {
-        let hlp = self.memory.borrow_mut().readByte(self.hl());
+        let hlp = self.hlp();
         self.sbc_a_n(hlp);
     }
     pub fn sbc_a_a(&mut self) { self.sbc_a_n(self.a); }
@@ -544,7 +550,7 @@ impl CPU {
     pub fn and_h(&mut self) { self.and_n(self.h); }
     pub fn and_l(&mut self) { self.and_n(self.l); }
     pub fn and_hlp(&mut self) {
-        let hlp = self.memory.borrow_mut().readByte(self.hl());
+        let hlp = self.hlp();
         self.and_n(hlp);
     }
     pub fn and_a(&mut self) { self.and_n(self.a); }
@@ -571,7 +577,7 @@ impl CPU {
     pub fn xor_h(&mut self) { self.xor_n(self.h); }
     pub fn xor_l(&mut self) { self.xor_n(self.l); }
     pub fn xor_hlp(&mut self) {
-        let hlp = self.memory.borrow_mut().readByte(self.hl());
+        let hlp = self.hlp();
         self.xor_n(hlp);
     }
     pub fn xor_a(&mut self) { self.xor_n(self.a); }
@@ -587,7 +593,7 @@ impl CPU {
     pub fn or_h(&mut self) { self.or_n(self.h); }
     pub fn or_l(&mut self) { self.or_n(self.l); }
     pub fn or_hlp(&mut self) {
-        let hlp = self.memory.borrow_mut().readByte(self.hl());
+        let hlp = self.hlp();
         self.or_n(hlp);
     }
     pub fn or_a(&mut self) { self.or_n(self.a); }
@@ -612,7 +618,7 @@ impl CPU {
     pub fn cp_h(&mut self) { self.cp_n(self.h); }
     pub fn cp_l(&mut self) { self.cp_n(self.l); }
     pub fn cp_hlp(&mut self) {
-        let hlp = self.memory.borrow_mut().readByte(self.hl());
+        let hlp = self.hlp();
         self.cp_n(hlp);
     }
     pub fn cp_a(&mut self) { self.cp_n(self.a); }
@@ -621,7 +627,7 @@ impl CPU {
 
 
     fn pop_rr(&mut self) -> (u8, u8) {
-        let bigreg = self.memory.borrow().readWord(self.sp);
+        let bigreg = self.memory.borrow().read_word(self.sp);
         let reg1_ret = ((bigreg >> 8) & 0xff) as u8;
         let reg2_ret = (bigreg & 0xff) as u8;
         self.sp += 2;
@@ -645,11 +651,11 @@ impl CPU {
 
 
     pub fn di(&mut self) {
-        self.IME_flag = false;
+        self.ime_flag = false;
         //res_ei = 2;
     }
     pub fn ei(&mut self) {
-        self.IME_flag = true;
+        self.ime_flag = true;
         //set_ei = 2;
     }
     pub fn reti(&mut self)
@@ -660,10 +666,10 @@ impl CPU {
     }
     
     pub fn halt(&mut self) {
-        if self.IME_flag {
+        if self.ime_flag {
             self.halted = true;
         } else {
-            if (self.memory.borrow_mut().readByte(IE) & self.memory.borrow_mut().readByte(IFLAGS) & 0x1f) == 0 {
+            if (self.memory.borrow_mut().read_byte(IE) & self.memory.borrow_mut().read_byte(IFLAGS) & 0x1f) == 0 {
                 self.halted = true;
                 // Halt mode is entered, but the interupt vector is not called
                 // and IF isn't cleared (it instead just continue executing when an interrupt is received)
@@ -720,7 +726,7 @@ impl CPU {
 
     pub fn call_nn(&mut self, address: u16) {
         self.sp -= 2;
-        self.memory.borrow_mut().writeWord(self.sp, self.pc);
+        self.memory.borrow_mut().write_word(self.sp, self.pc);
         self.pc = address;
     }
     pub fn call_z(&mut self, address: u16) {
@@ -785,7 +791,7 @@ impl CPU {
 
 
     pub fn ret(&mut self) {
-        self.pc = self.memory.borrow_mut().readWord(self.sp);
+        self.pc = self.memory.borrow_mut().read_word(self.sp);
         self.sp += 2;
     }
     pub fn ret_z(&mut self) {
@@ -814,7 +820,7 @@ impl CPU {
     }
 
     pub fn cb(&mut self, opcode: u8) {
-        let inst: &instruction = &ops_table::CB_instructions[opcode as usize];
+        let inst: &Instruction = &ops_table::CB_INSTRUCTIONS[opcode as usize];
         match &inst.execute {
             FnEnum::OpLen1(op) => (op)(self),
             _ => println!("missing CB prefixed opcode: {}", opcode),
@@ -822,18 +828,18 @@ impl CPU {
     }
 
     pub fn ld_a_np(&mut self, address: u8) {
-        self.a = self.memory.borrow_mut().readByte(0xff00 + (address as u16));
+        self.a = self.memory.borrow_mut().read_byte(0xff00 + (address as u16));
     }
     pub fn ld_np_a(&mut self, address: u8) {
-        self.memory.borrow_mut().writeByte(0xFF00 + address as u16, self.a);
+        self.memory.borrow_mut().write_byte(0xFF00 + address as u16, self.a);
     }
     pub fn ld_a_ffcp(&mut self) {
-        let val = self.memory.borrow_mut().readByte(0xff00 + self.c as u16);
+        let val = self.memory.borrow_mut().read_byte(0xff00 + self.c as u16);
         self.ld_a_n(val);
     }
     pub fn ld_ffcp_a(&mut self)
     {
-        self.memory.borrow_mut().writeByte(0xff00 + self.c as u16, self.a);
+        self.memory.borrow_mut().write_byte(0xff00 + self.c as u16, self.a);
     }
 
     pub fn add_sp_n(&mut self, n: u8) {
@@ -845,12 +851,12 @@ impl CPU {
     }
 
     pub fn ld_nnp_a(&mut self, address: u16) {
-        self.memory.borrow_mut().writeByte(address, self.a);
+        self.memory.borrow_mut().write_byte(address, self.a);
     }
 
     pub fn push_nn(&mut self, nn: u16) {
         self.sp -= 2;
-        self.memory.borrow_mut().writeWord(self.sp, nn);
+        self.memory.borrow_mut().write_word(self.sp, nn);
     }
     pub fn push_af(&mut self) {
         self.push_nn(self.af());
@@ -861,7 +867,7 @@ impl CPU {
     }
 
     pub fn ld_a_nnp(&mut self, address: u16) {
-        self.a = self.memory.borrow_mut().readByte(address);
+        self.a = self.memory.borrow_mut().read_byte(address);
     }
 
     pub fn ld_hl_spn(&mut self, value: i8) {
@@ -908,9 +914,9 @@ impl CPU {
     pub fn rlc_l(&mut self) { self.l = self.rlc_r(self.a); }
     pub fn rlc_hlp(&mut self) {
         let address = self.hl();
-        let cur_hlp = self.memory.borrow_mut().readByte(address);
+        let cur_hlp = self.memory.borrow_mut().read_byte(address);
         let new_hlp = self.rlc_r(cur_hlp);
-        self.memory.borrow_mut().writeByte(address, new_hlp);
+        self.memory.borrow_mut().write_byte(address, new_hlp);
     }
 
     pub fn rrc_r(&mut self, r: u8) -> u8 {
@@ -941,9 +947,9 @@ impl CPU {
     pub fn rrc_l(&mut self) { self.l = self.rrc_r(self.l); }
     pub fn rrc_hlp(&mut self) {
         let address = self.hl();
-        let cur_hlp = self.memory.borrow_mut().readByte(address);
+        let cur_hlp = self.memory.borrow_mut().read_byte(address);
         let new_hlp = self.rrc_r(cur_hlp);
-        self.memory.borrow_mut().writeByte(address, new_hlp);
+        self.memory.borrow_mut().write_byte(address, new_hlp);
     }
 
     pub fn rl_r(&mut self, r: u8) -> u8 {
@@ -980,9 +986,9 @@ impl CPU {
     pub fn rl_l(&mut self) { self.l = self.rl_r(self.l); }
     pub fn rl_hlp(&mut self) {
         let address = self.hl();
-        let cur_hlp = self.memory.borrow_mut().readByte(address);
+        let cur_hlp = self.memory.borrow_mut().read_byte(address);
         let new_hlp = self.rl_r(cur_hlp);
-        self.memory.borrow_mut().writeByte(address, new_hlp);
+        self.memory.borrow_mut().write_byte(address, new_hlp);
     }
 
     pub fn rr_r(&mut self, r: u8) -> u8 {
@@ -1019,9 +1025,9 @@ impl CPU {
     pub fn rr_l(&mut self) { self.l = self.rr_r(self.l); }
     pub fn rr_hlp(&mut self) {
         let address = self.hl();
-        let cur_hlp = self.memory.borrow_mut().readByte(address);
+        let cur_hlp = self.memory.borrow_mut().read_byte(address);
         let new_hlp = self.rr_r(cur_hlp);
-        self.memory.borrow_mut().writeByte(address, new_hlp);
+        self.memory.borrow_mut().write_byte(address, new_hlp);
     }
 
     pub fn sla_r(&mut self, r: u8) -> u8 {
@@ -1054,9 +1060,9 @@ impl CPU {
     pub fn sla_l(&mut self) { self.l = self.sla_r(self.l); }
     pub fn sla_hlp(&mut self) {
         let address = self.hl();
-        let cur_hlp = self.memory.borrow_mut().readByte(address);
+        let cur_hlp = self.memory.borrow_mut().read_byte(address);
         let new_hlp = self.sla_r(cur_hlp);
-        self.memory.borrow_mut().writeByte(address, new_hlp);
+        self.memory.borrow_mut().write_byte(address, new_hlp);
     }
 
 
@@ -1091,9 +1097,9 @@ impl CPU {
     pub fn sra_l(&mut self) { self.l = self.sra_r(self.l); }
     pub fn sra_hlp(&mut self) {
         let address = self.hl();
-        let cur_hlp = self.memory.borrow_mut().readByte(address);
+        let cur_hlp = self.memory.borrow_mut().read_byte(address);
         let new_hlp = self.sra_r(cur_hlp);
-        self.memory.borrow_mut().writeByte(address, new_hlp);
+        self.memory.borrow_mut().write_byte(address, new_hlp);
     }
 
     pub fn swap_r(&mut self, r: u8) -> u8 {
@@ -1121,9 +1127,9 @@ impl CPU {
     pub fn swap_l(&mut self) { self.l = self.swap_r(self.l); }
     pub fn swap_hlp(&mut self) {
         let address = self.hl();
-        let cur_hlp = self.memory.borrow_mut().readByte(address);
+        let cur_hlp = self.memory.borrow_mut().read_byte(address);
         let new_hlp = self.swap_r(cur_hlp);
-        self.memory.borrow_mut().writeByte(address, new_hlp);
+        self.memory.borrow_mut().write_byte(address, new_hlp);
     }
 
 
@@ -1158,10 +1164,225 @@ impl CPU {
     pub fn srl_l(&mut self) { self.l = self.srl_r(self.l); }
     pub fn srl_hlp(&mut self) {
         let address = self.hl();
-        let cur_hlp = self.memory.borrow_mut().readByte(address);
+        let cur_hlp = self.memory.borrow_mut().read_byte(address);
         let new_hlp = self.srl_r(cur_hlp);
-        self.memory.borrow_mut().writeByte(address, new_hlp);
+        self.memory.borrow_mut().write_byte(address, new_hlp);
     }
+
+    // Test if bit in register r is 0
+    pub fn bit_n_r(&mut self, bit: u8, r: u8) {
+        self.flags_clear(FLAGS_ZERO);
+        self.flags_clear(FLAGS_NEGATIVE);
+        self.flags_set(FLAGS_HALFCARRY);
+
+        if (r & (1 << bit)) == 0 {
+            self.flags_set(FLAGS_ZERO);
+        }
+    }
+
+    pub fn bit_0_a(&mut self) { self.bit_n_r(0, self.a); }
+    pub fn bit_0_b(&mut self) { self.bit_n_r(0, self.b); }
+    pub fn bit_0_c(&mut self) { self.bit_n_r(0, self.c); }
+    pub fn bit_0_d(&mut self) { self.bit_n_r(0, self.d); }
+    pub fn bit_0_e(&mut self) { self.bit_n_r(0, self.e); }
+    pub fn bit_0_h(&mut self) { self.bit_n_r(0, self.h); }
+    pub fn bit_0_l(&mut self) { self.bit_n_r(0, self.l); }
+    pub fn bit_0_hlp(&mut self) { self.bit_n_r(0, self.hlp()); }
+    pub fn bit_1_a(&mut self) { self.bit_n_r(1, self.a); }
+    pub fn bit_1_b(&mut self) { self.bit_n_r(1, self.b); }
+    pub fn bit_1_c(&mut self) { self.bit_n_r(1, self.c); }
+    pub fn bit_1_d(&mut self) { self.bit_n_r(1, self.d); }
+    pub fn bit_1_e(&mut self) { self.bit_n_r(1, self.e); }
+    pub fn bit_1_h(&mut self) { self.bit_n_r(1, self.h); }
+    pub fn bit_1_l(&mut self) { self.bit_n_r(1, self.l); }
+    pub fn bit_1_hlp(&mut self) { self.bit_n_r(1, self.hlp()); }
+    pub fn bit_2_a(&mut self) { self.bit_n_r(2, self.a); }
+    pub fn bit_2_b(&mut self) { self.bit_n_r(2, self.b); }
+    pub fn bit_2_c(&mut self) { self.bit_n_r(2, self.c); }
+    pub fn bit_2_d(&mut self) { self.bit_n_r(2, self.d); }
+    pub fn bit_2_e(&mut self) { self.bit_n_r(2, self.e); }
+    pub fn bit_2_h(&mut self) { self.bit_n_r(2, self.h); }
+    pub fn bit_2_l(&mut self) { self.bit_n_r(2, self.l); }
+    pub fn bit_2_hlp(&mut self) { self.bit_n_r(2, self.hlp()); }
+    pub fn bit_3_a(&mut self) { self.bit_n_r(3, self.a); }
+    pub fn bit_3_b(&mut self) { self.bit_n_r(3, self.b); }
+    pub fn bit_3_c(&mut self) { self.bit_n_r(3, self.c); }
+    pub fn bit_3_d(&mut self) { self.bit_n_r(3, self.d); }
+    pub fn bit_3_e(&mut self) { self.bit_n_r(3, self.e); }
+    pub fn bit_3_h(&mut self) { self.bit_n_r(3, self.h); }
+    pub fn bit_3_l(&mut self) { self.bit_n_r(3, self.l); }
+    pub fn bit_3_hlp(&mut self) { self.bit_n_r(3, self.hlp()); }
+    pub fn bit_4_a(&mut self) { self.bit_n_r(4, self.a); }
+    pub fn bit_4_b(&mut self) { self.bit_n_r(4, self.b); }
+    pub fn bit_4_c(&mut self) { self.bit_n_r(4, self.c); }
+    pub fn bit_4_d(&mut self) { self.bit_n_r(4, self.d); }
+    pub fn bit_4_e(&mut self) { self.bit_n_r(4, self.e); }
+    pub fn bit_4_h(&mut self) { self.bit_n_r(4, self.h); }
+    pub fn bit_4_l(&mut self) { self.bit_n_r(4, self.l); }
+    pub fn bit_4_hlp(&mut self) { self.bit_n_r(4, self.hlp()); }
+    pub fn bit_5_a(&mut self) { self.bit_n_r(5, self.a); }
+    pub fn bit_5_b(&mut self) { self.bit_n_r(5, self.b); }
+    pub fn bit_5_c(&mut self) { self.bit_n_r(5, self.c); }
+    pub fn bit_5_d(&mut self) { self.bit_n_r(5, self.d); }
+    pub fn bit_5_e(&mut self) { self.bit_n_r(5, self.e); }
+    pub fn bit_5_h(&mut self) { self.bit_n_r(5, self.h); }
+    pub fn bit_5_l(&mut self) { self.bit_n_r(5, self.l); }
+    pub fn bit_5_hlp(&mut self) { self.bit_n_r(5, self.hlp()); }
+    pub fn bit_6_a(&mut self) { self.bit_n_r(6, self.a); }
+    pub fn bit_6_b(&mut self) { self.bit_n_r(6, self.b); }
+    pub fn bit_6_c(&mut self) { self.bit_n_r(6, self.c); }
+    pub fn bit_6_d(&mut self) { self.bit_n_r(6, self.d); }
+    pub fn bit_6_e(&mut self) { self.bit_n_r(6, self.e); }
+    pub fn bit_6_h(&mut self) { self.bit_n_r(6, self.h); }
+    pub fn bit_6_l(&mut self) { self.bit_n_r(6, self.l); }
+    pub fn bit_6_hlp(&mut self) { self.bit_n_r(6, self.hlp()); }
+    pub fn bit_7_a(&mut self) { self.bit_n_r(7, self.a); }
+    pub fn bit_7_b(&mut self) { self.bit_n_r(7, self.b); }
+    pub fn bit_7_c(&mut self) { self.bit_n_r(7, self.c); }
+    pub fn bit_7_d(&mut self) { self.bit_n_r(7, self.d); }
+    pub fn bit_7_e(&mut self) { self.bit_n_r(7, self.e); }
+    pub fn bit_7_h(&mut self) { self.bit_n_r(7, self.h); }
+    pub fn bit_7_l(&mut self) { self.bit_n_r(7, self.l); }
+    pub fn bit_7_hlp(&mut self) { self.bit_n_r(7, self.hlp()); }
+
+    // reset bit in r to 0
+    pub fn res_n_r(&self, bit: u8, r: u8) -> u8 {
+        return r & !(1 << bit);
+    }
+    pub fn res_0_a(&mut self) { self.a = self.res_n_r(0, self.a); }
+    pub fn res_0_b(&mut self) { self.b = self.res_n_r(0, self.b); }
+    pub fn res_0_c(&mut self) { self.c = self.res_n_r(0, self.c); }
+    pub fn res_0_d(&mut self) { self.d = self.res_n_r(0, self.d); }
+    pub fn res_0_e(&mut self) { self.e = self.res_n_r(0, self.e); }
+    pub fn res_0_h(&mut self) { self.h = self.res_n_r(0, self.h); }
+    pub fn res_0_l(&mut self) { self.l = self.res_n_r(0, self.l); }
+    pub fn res_0_hlp(&mut self) { self.set_hlp(self.res_n_r(0, self.hlp())); }
+    pub fn res_1_a(&mut self) { self.a = self.res_n_r(1, self.a); }
+    pub fn res_1_b(&mut self) { self.b = self.res_n_r(1, self.b); }
+    pub fn res_1_c(&mut self) { self.c = self.res_n_r(1, self.c); }
+    pub fn res_1_d(&mut self) { self.d = self.res_n_r(1, self.d); }
+    pub fn res_1_e(&mut self) { self.e = self.res_n_r(1, self.e); }
+    pub fn res_1_h(&mut self) { self.h = self.res_n_r(1, self.h); }
+    pub fn res_1_l(&mut self) { self.l = self.res_n_r(1, self.l); }
+    pub fn res_1_hlp(&mut self) { self.set_hlp(self.res_n_r(1, self.hlp())); }
+    pub fn res_2_a(&mut self) { self.a = self.res_n_r(2, self.a); }
+    pub fn res_2_b(&mut self) { self.b = self.res_n_r(2, self.b); }
+    pub fn res_2_c(&mut self) { self.c = self.res_n_r(2, self.c); }
+    pub fn res_2_d(&mut self) { self.d = self.res_n_r(2, self.d); }
+    pub fn res_2_e(&mut self) { self.e = self.res_n_r(2, self.e); }
+    pub fn res_2_h(&mut self) { self.h = self.res_n_r(2, self.h); }
+    pub fn res_2_l(&mut self) { self.l = self.res_n_r(2, self.l); }
+    pub fn res_2_hlp(&mut self) { self.set_hlp(self.res_n_r(2, self.hlp())); }
+    pub fn res_3_a(&mut self) { self.a = self.res_n_r(3, self.a); }
+    pub fn res_3_b(&mut self) { self.b = self.res_n_r(3, self.b); }
+    pub fn res_3_c(&mut self) { self.c = self.res_n_r(3, self.c); }
+    pub fn res_3_d(&mut self) { self.d = self.res_n_r(3, self.d); }
+    pub fn res_3_e(&mut self) { self.e = self.res_n_r(3, self.e); }
+    pub fn res_3_h(&mut self) { self.h = self.res_n_r(3, self.h); }
+    pub fn res_3_l(&mut self) { self.l = self.res_n_r(3, self.l); }
+    pub fn res_3_hlp(&mut self) { self.set_hlp(self.res_n_r(3, self.hlp())); }
+    pub fn res_4_a(&mut self) { self.a = self.res_n_r(4, self.a); }
+    pub fn res_4_b(&mut self) { self.b = self.res_n_r(4, self.b); }
+    pub fn res_4_c(&mut self) { self.c = self.res_n_r(4, self.c); }
+    pub fn res_4_d(&mut self) { self.d = self.res_n_r(4, self.d); }
+    pub fn res_4_e(&mut self) { self.e = self.res_n_r(4, self.e); }
+    pub fn res_4_h(&mut self) { self.h = self.res_n_r(4, self.h); }
+    pub fn res_4_l(&mut self) { self.l = self.res_n_r(4, self.l); }
+    pub fn res_4_hlp(&mut self) { self.set_hlp(self.res_n_r(4, self.hlp())); }
+    pub fn res_5_a(&mut self) { self.a = self.res_n_r(5, self.a); }
+    pub fn res_5_b(&mut self) { self.b = self.res_n_r(5, self.b); }
+    pub fn res_5_c(&mut self) { self.c = self.res_n_r(5, self.c); }
+    pub fn res_5_d(&mut self) { self.d = self.res_n_r(5, self.d); }
+    pub fn res_5_e(&mut self) { self.e = self.res_n_r(5, self.e); }
+    pub fn res_5_h(&mut self) { self.h = self.res_n_r(5, self.h); }
+    pub fn res_5_l(&mut self) { self.l = self.res_n_r(5, self.l); }
+    pub fn res_5_hlp(&mut self) { self.set_hlp(self.res_n_r(5, self.hlp())); }
+    pub fn res_6_a(&mut self) { self.a = self.res_n_r(6, self.a); }
+    pub fn res_6_b(&mut self) { self.b = self.res_n_r(6, self.b); }
+    pub fn res_6_c(&mut self) { self.c = self.res_n_r(6, self.c); }
+    pub fn res_6_d(&mut self) { self.d = self.res_n_r(6, self.d); }
+    pub fn res_6_e(&mut self) { self.e = self.res_n_r(6, self.e); }
+    pub fn res_6_h(&mut self) { self.h = self.res_n_r(6, self.h); }
+    pub fn res_6_l(&mut self) { self.l = self.res_n_r(6, self.l); }
+    pub fn res_6_hlp(&mut self) { self.set_hlp(self.res_n_r(6, self.hlp())); }
+    pub fn res_7_a(&mut self) { self.a = self.res_n_r(7, self.a); }
+    pub fn res_7_b(&mut self) { self.b = self.res_n_r(7, self.b); }
+    pub fn res_7_c(&mut self) { self.c = self.res_n_r(7, self.c); }
+    pub fn res_7_d(&mut self) { self.d = self.res_n_r(7, self.d); }
+    pub fn res_7_e(&mut self) { self.e = self.res_n_r(7, self.e); }
+    pub fn res_7_h(&mut self) { self.h = self.res_n_r(7, self.h); }
+    pub fn res_7_l(&mut self) { self.l = self.res_n_r(7, self.l); }
+    pub fn res_7_hlp(&mut self) { self.set_hlp(self.res_n_r(7, self.hlp())); }
+
+    pub fn set_n_r(&self, bit: u8, r: u8) -> u8 {
+        return r | (1 << bit);
+    }
+    pub fn set_0_a(&mut self) { self.a = self.set_n_r(0, self.a); }
+    pub fn set_0_b(&mut self) { self.b = self.set_n_r(0, self.b); }
+    pub fn set_0_c(&mut self) { self.c = self.set_n_r(0, self.c); }
+    pub fn set_0_d(&mut self) { self.d = self.set_n_r(0, self.d); }
+    pub fn set_0_e(&mut self) { self.e = self.set_n_r(0, self.e); }
+    pub fn set_0_h(&mut self) { self.h = self.set_n_r(0, self.h); }
+    pub fn set_0_l(&mut self) { self.l = self.set_n_r(0, self.l); }
+    pub fn set_0_hlp(&mut self) { self.set_hlp(self.set_n_r(0, self.hlp())); }
+    pub fn set_1_a(&mut self) { self.a = self.set_n_r(1, self.a); }
+    pub fn set_1_b(&mut self) { self.b = self.set_n_r(1, self.b); }
+    pub fn set_1_c(&mut self) { self.c = self.set_n_r(1, self.c); }
+    pub fn set_1_d(&mut self) { self.d = self.set_n_r(1, self.d); }
+    pub fn set_1_e(&mut self) { self.e = self.set_n_r(1, self.e); }
+    pub fn set_1_h(&mut self) { self.h = self.set_n_r(1, self.h); }
+    pub fn set_1_l(&mut self) { self.l = self.set_n_r(1, self.l); }
+    pub fn set_1_hlp(&mut self) { self.set_hlp(self.set_n_r(1, self.hlp())); }
+    pub fn set_2_a(&mut self) { self.a = self.set_n_r(2, self.a); }
+    pub fn set_2_b(&mut self) { self.b = self.set_n_r(2, self.b); }
+    pub fn set_2_c(&mut self) { self.c = self.set_n_r(2, self.c); }
+    pub fn set_2_d(&mut self) { self.d = self.set_n_r(2, self.d); }
+    pub fn set_2_e(&mut self) { self.e = self.set_n_r(2, self.e); }
+    pub fn set_2_h(&mut self) { self.h = self.set_n_r(2, self.h); }
+    pub fn set_2_l(&mut self) { self.l = self.set_n_r(2, self.l); }
+    pub fn set_2_hlp(&mut self) { self.set_hlp(self.set_n_r(2, self.hlp())); }
+    pub fn set_3_a(&mut self) { self.a = self.set_n_r(3, self.a); }
+    pub fn set_3_b(&mut self) { self.b = self.set_n_r(3, self.b); }
+    pub fn set_3_c(&mut self) { self.c = self.set_n_r(3, self.c); }
+    pub fn set_3_d(&mut self) { self.d = self.set_n_r(3, self.d); }
+    pub fn set_3_e(&mut self) { self.e = self.set_n_r(3, self.e); }
+    pub fn set_3_h(&mut self) { self.h = self.set_n_r(3, self.h); }
+    pub fn set_3_l(&mut self) { self.l = self.set_n_r(3, self.l); }
+    pub fn set_3_hlp(&mut self) { self.set_hlp(self.set_n_r(3, self.hlp())); }
+    pub fn set_4_a(&mut self) { self.a = self.set_n_r(4, self.a); }
+    pub fn set_4_b(&mut self) { self.b = self.set_n_r(4, self.b); }
+    pub fn set_4_c(&mut self) { self.c = self.set_n_r(4, self.c); }
+    pub fn set_4_d(&mut self) { self.d = self.set_n_r(4, self.d); }
+    pub fn set_4_e(&mut self) { self.e = self.set_n_r(4, self.e); }
+    pub fn set_4_h(&mut self) { self.h = self.set_n_r(4, self.h); }
+    pub fn set_4_l(&mut self) { self.l = self.set_n_r(4, self.l); }
+    pub fn set_4_hlp(&mut self) { self.set_hlp(self.set_n_r(4, self.hlp())); }
+    pub fn set_5_a(&mut self) { self.a = self.set_n_r(5, self.a); }
+    pub fn set_5_b(&mut self) { self.b = self.set_n_r(5, self.b); }
+    pub fn set_5_c(&mut self) { self.c = self.set_n_r(5, self.c); }
+    pub fn set_5_d(&mut self) { self.d = self.set_n_r(5, self.d); }
+    pub fn set_5_e(&mut self) { self.e = self.set_n_r(5, self.e); }
+    pub fn set_5_h(&mut self) { self.h = self.set_n_r(5, self.h); }
+    pub fn set_5_l(&mut self) { self.l = self.set_n_r(5, self.l); }
+    pub fn set_5_hlp(&mut self) { self.set_hlp(self.set_n_r(5, self.hlp())); }
+    pub fn set_6_a(&mut self) { self.a = self.set_n_r(6, self.a); }
+    pub fn set_6_b(&mut self) { self.b = self.set_n_r(6, self.b); }
+    pub fn set_6_c(&mut self) { self.c = self.set_n_r(6, self.c); }
+    pub fn set_6_d(&mut self) { self.d = self.set_n_r(6, self.d); }
+    pub fn set_6_e(&mut self) { self.e = self.set_n_r(6, self.e); }
+    pub fn set_6_h(&mut self) { self.h = self.set_n_r(6, self.h); }
+    pub fn set_6_l(&mut self) { self.l = self.set_n_r(6, self.l); }
+    pub fn set_6_hlp(&mut self) { self.set_hlp(self.set_n_r(6, self.hlp())); }
+    pub fn set_7_a(&mut self) { self.a = self.set_n_r(7, self.a); }
+    pub fn set_7_b(&mut self) { self.b = self.set_n_r(7, self.b); }
+    pub fn set_7_c(&mut self) { self.c = self.set_n_r(7, self.c); }
+    pub fn set_7_d(&mut self) { self.d = self.set_n_r(7, self.d); }
+    pub fn set_7_e(&mut self) { self.e = self.set_n_r(7, self.e); }
+    pub fn set_7_h(&mut self) { self.h = self.set_n_r(7, self.h); }
+    pub fn set_7_l(&mut self) { self.l = self.set_n_r(7, self.l); }
+    pub fn set_7_hlp(&mut self) { self.set_hlp(self.set_n_r(7, self.hlp())); }
+    
+
     
 
 }
