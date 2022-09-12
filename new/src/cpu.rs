@@ -235,7 +235,8 @@ impl CPU {
 
 
     fn print_op(&self, instr: Instruction) {
-        use rt_format::*;
+        //use rt_format::*;
+        use dyn_fmt::AsStrFormatExt;
         let opcode = self.memory.borrow().read_byte(self.pc);
         print!("{:x}\t{:x}:", self.pc, opcode);
         match instr.execute {
@@ -244,7 +245,9 @@ impl CPU {
             FnEnum::OpLen1(_) => (),
             FnEnum::OpLen2(_) => {
                 let operand = self.memory.borrow().read_byte(self.pc + 1);
-                rt_print!("\t" + instr.disas + "\n", operand);
+                let asdf = instr.disas;
+                asdf.format(&[operand]);
+                print!("\t{}", asdf.format(&[operand]));
             },
             FnEnum::OpLen2i(_) => {
                 let operand = self.memory.borrow().read_byte(self.pc + 1) as i8;

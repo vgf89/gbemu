@@ -8,5 +8,5 @@ edition = "2021"
 [dependencies]
 eframe = "0.18.0"
 egui = "0.18.1"
-rt-format = "0.3.1"
+dyn-fmt = "0.3.0"
 ux = "0.1.5"

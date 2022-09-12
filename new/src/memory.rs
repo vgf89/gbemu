@@ -77,6 +77,40 @@ impl Memory {
         }
     }
 
+    pub fn load_rom(&mut self, filepath: String) {
+        use std::fs::File;
+        use std::path::Path;
+        use std::io::prelude::*;
+
+        let path = Path::new(&filepath);
+        let file = match File::open(&path) {
+            Ok(file) => file,
+            Err(why) => panic!("couldn't open file: {}", why),
+        };
+        let mut buf;
+        match file.read_to_end(buf) {
+            Err(why) => panic!("couldn't read file: {}", why),
+            Ok(_) => (),
+        };
+
+        let cartridge_mode :u8;
+        match buf.get(0x0147) {
+            Some(val) => cartridge_mode = *val,
+            None => panic!("rom file buffer empy"),
+        }
+
+        match cartridge_mode {
+            NO_MBC => {
+                println!("Loading rom-only game");
+                for (i, val) in buf.iter().enumerate() {
+                    self.write_byte(i as u16, *val);
+                }
+            },
+            _ => panic!("cartidge mode not supported: {}", cartridge_mode),
+        }
+        
+    }
+
     pub fn read_byte(&self, address:u16) -> u8 {
         if self.cartridge_type == MBC1 && address >= 0x4000 && address < 0x8000 {
             return self.mbc_1_banks[self.mbc_1_bank_nn as usize][address as usize - 0x4000];

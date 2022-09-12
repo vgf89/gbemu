@@ -19,6 +19,8 @@ impl Gameboy {
     pub fn new() -> Self {
         let mem: RefCell<Memory> = RefCell::new(Memory::default());
         let mut proc = CPU::new(mem);
+        mem.borrow_mut().load_rom("testroms/gb-test-roms-master/cpu_instrs/cpu_instrs.gb".to_string());
+        
 
         return Self {
             clock: 0,
@@ -26,7 +28,7 @@ impl Gameboy {
             processor: proc,
         }
     }
-    fn reset(&mut self) {
+    pub fn reset(&mut self) {
         // BOOT
         self.processor.set_af(0x01b0);
         self.processor.set_bc(0x0013);
@@ -76,7 +78,7 @@ impl Gameboy {
 
     }
 
-    fn step(&mut self) {
+    pub fn step(&mut self) {
         // How to schedule CPU steps:
         // Number of dots (clock edges) per frame (60fps): 70000
         // CPU cycle is 4 dots

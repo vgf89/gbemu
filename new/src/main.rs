@@ -56,17 +56,20 @@ impl Default for MyApp {
     fn default() -> Self {
         //println!("{}", ROM00); // Just checking that memory consts imported
         let color_image = egui::ColorImage::new([160usize,144usize], egui::Color32::WHITE);
+        let mut gameboy = gameboy::Gameboy::new();
+        gameboy.reset();
         return Self {
             screen: [[0u8; 160];144],
             screen_image: color_image,
             frame_iter: 0,
-            gb: gameboy::Gameboy::new(),
+            gb: gameboy,
         }
     }
 }
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        self.gb.step();
         self.update_color_image();
         let sct = ctx.load_texture("color_image", self.screen_image.clone());
         egui::CentralPanel::default().show(ctx, |ui| {
