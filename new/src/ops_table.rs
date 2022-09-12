@@ -10,7 +10,7 @@ pub enum FnEnum { // based on opcode length
 
 pub struct Instruction {
 	pub disas:&'static str,
-    pub cycles:u8, // This is master clock cycles (aka dots i think). t mode on gbops table
+    pub cycles:u32, // This is master clock cycles (aka dots i think). t mode on gbops table
 	pub execute:FnEnum,
 }
 
@@ -20,7 +20,7 @@ use crate::cpu::*;
 // https://izik1.github.io/gbops/
 pub const INSTRUCTIONS: &'static [Instruction/*; 256*/] = &[
     Instruction {disas: "NOP", cycles: 4, execute: FnEnum::OpLen1(CPU::nop)},                      // 0x00
-    Instruction {disas: "LD BC, 0x%04X", cycles: 12, execute: FnEnum::OpLen3(CPU::ld_bc_nn)},          // 0x01
+    Instruction {disas: "LD BC, {:x}", cycles: 12, execute: FnEnum::OpLen3(CPU::ld_bc_nn)},          // 0x01
     Instruction {disas: "LD (BC), A", cycles: 8, execute: FnEnum::OpLen1(CPU::ld_bcp_a)},              // 0x02
     Instruction {disas: "INC BC", cycles: 8, execute: FnEnum::OpLen1(CPU::inc_bc)},                    // 0x03
     Instruction {disas: "INC B", cycles: 4, execute: FnEnum::OpLen1(CPU::inc_b)},                      // 0x04

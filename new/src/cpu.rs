@@ -17,14 +17,14 @@ pub struct CPU {
     pub pc: u16,
 
     // Auxiiliary stuff
-    pub clock: u32,
+    pub cpu_clock: u32,
     pub ime_flag: bool,
     pub set_ei: u8,
     pub res_ei: u8 ,
     pub halted: bool,
     pub halt_bug: bool,
 
-    memory: RefCell<Memory>,
+    pub memory: RefCell<Memory>,
 }
 
 pub const FLAGS_ZERO:u8 = 1 << 7;
@@ -32,9 +32,11 @@ pub const FLAGS_NEGATIVE:u8 = 1 << 6;
 pub const FLAGS_HALFCARRY:u8 = 1 << 5;
 pub const FLAGS_CARRY:u8 = 1 << 4;
 
+//use crate gameboy::*;
+
 impl CPU {
     pub fn new(mem: RefCell<Memory>) -> Self {
-        return Self{
+        return Self {
             a: 0,
             f: 0,
             b: 0,
@@ -46,7 +48,7 @@ impl CPU {
             sp: 0,
             pc: 0,
 
-            clock: 0,
+            cpu_clock: 0,
             ime_flag: true,
             set_ei: 0,
             res_ei: 0,
@@ -119,26 +121,141 @@ impl CPU {
     }
 
     pub fn reset_cpu_clock(&mut self, maxclock: u16) {
-        self.clock = self.clock - maxclock as u32;
+        self.cpu_clock = self.cpu_clock - maxclock as u32;
     }
 
     // CPU stepper
-    pub fn cpu_step(&mut self) {
+    pub fn cpu_step(&mut self, system_clock: u32) {
+        if system_clock < self.cpu_clock {
+            return;
+        }
+
+        // Handle Interrupts
+        if self.ime_flag {
+            if self.memory.borrow().ie_isset(I_VBLANK) && self.memory.borrow().if_isset(I_VBLANK) {
+                self.cpu_clock += 20;
+                self.halted = false;
+                self.memory.borrow_mut().ie_clear(I_VBLANK);
+                self.ime_flag = false;
+                self.call_nn(0x0040);
+                return;
+            }
+            if self.memory.borrow().ie_isset(I_LCD_STAT) && self.memory.borrow().if_isset(I_LCD_STAT) {
+                self.cpu_clock += 20;
+                self.halted = false;
+                self.memory.borrow_mut().ie_clear(I_LCD_STAT);
+                self.ime_flag = false;
+                self.call_nn(0x0048);
+                return;
+            }
+            if self.memory.borrow().ie_isset(I_TIMER) && self.memory.borrow().if_isset(I_TIMER) {
+                self.cpu_clock += 20;
+                self.halted = false;
+                self.memory.borrow_mut().ie_clear(I_TIMER);
+                self.ime_flag = false;
+                self.call_nn(0x0050);
+                return;
+            }
+            if self.memory.borrow().ie_isset(I_SERIAL) && self.memory.borrow().if_isset(I_SERIAL) {
+                self.cpu_clock += 20;
+                self.halted = false;
+                self.memory.borrow_mut().ie_clear(I_SERIAL);
+                self.ime_flag = false;
+                self.call_nn(0x0058);
+                return;
+            }
+            if self.memory.borrow().ie_isset(I_JOYPAD) && self.memory.borrow().if_isset(I_JOYPAD) {
+                self.cpu_clock += 20;
+                self.halted = false;
+                self.memory.borrow_mut().ie_clear(I_JOYPAD);
+                self.ime_flag = false;
+                self.call_nn(0x0060);
+                return;
+            }
+        } else if self.halted {
+            if self.memory.borrow().if_isset(I_VBLANK) ||
+               self.memory.borrow().if_isset(I_LCD_STAT) ||
+               self.memory.borrow().if_isset(I_SERIAL) ||
+               self.memory.borrow().if_isset(I_TIMER) ||
+               self.memory.borrow().if_isset(I_JOYPAD) {
+                self.halted = false;
+            }
+        }
         // FIXME: Implement
 
-        let inst: &Instruction = &ops_table::INSTRUCTIONS[0];
+        let opcode_length;
+        let opcode = self.memory.borrow().read_byte(self.pc);
+        let inst: &Instruction = &ops_table::INSTRUCTIONS[opcode as usize];
         match &inst.execute {
-            FnEnum::OpLen1(op) => (op)(self),
-            FnEnum::OpLen2(op) => (op)(self, 0u8), // FIXME: Get value
-            FnEnum::OpLen3(op) => (op)(self, 0u16),
-            FnEnum::OpLen2i(op) => (op)(self, 0i8),
+            FnEnum::OpLen1(_) => { opcode_length = 1; },
+            FnEnum::OpLen2(_) => { opcode_length = 2; },
+            FnEnum::OpLen2i(_) => { opcode_length = 2; },
+            FnEnum::OpLen3(_) => { opcode_length = 3; },
             FnEnum::STOP => todo!(),
             FnEnum::UNDEFINED => todo!(),
         }
 
-        
+        // FIXME: Handle breakpoints here
+
+        if self.halt_bug {
+            self.halt_bug = false;
+        } else {
+            if !self.halted {
+                self.pc += opcode_length;
+            }
+        }
+
+        if self.halted {
+            self.cpu_clock += 4;
+            return;
+        }
+
+        self.cpu_clock += inst.cycles;
+
+        match &inst.execute {
+            FnEnum::OpLen1(op) => {
+                (op)(self);
+            },
+            FnEnum::OpLen2(op) => {
+                let operand = self.memory.borrow().read_byte(self.pc + 1);
+                (op)(self, operand);
+            },
+            FnEnum::OpLen2i(op) => {
+                let operand = self.memory.borrow().read_byte(self.pc + 1) as i8;
+                (op)(self, operand);
+            },
+            FnEnum::OpLen3(op) => {
+                let operand = self.memory.borrow().read_word(self.pc + 1);
+                (op)(self, operand);
+            },
+            FnEnum::STOP => todo!(),
+            FnEnum::UNDEFINED => todo!(),
+        }
     }
 
+
+    fn print_op(&self, instr: Instruction) {
+        use rt_format::*;
+        let opcode = self.memory.borrow().read_byte(self.pc);
+        print!("{:x}\t{:x}:", self.pc, opcode);
+        match instr.execute {
+            FnEnum::STOP => todo!(),
+            FnEnum::UNDEFINED => todo!(),
+            FnEnum::OpLen1(_) => (),
+            FnEnum::OpLen2(_) => {
+                let operand = self.memory.borrow().read_byte(self.pc + 1);
+                rt_print!("\t" + instr.disas + "\n", operand);
+            },
+            FnEnum::OpLen2i(_) => {
+                let operand = self.memory.borrow().read_byte(self.pc + 1) as i8;
+                rt_print!("\t" + instr.disas + "\n", operand);
+            },
+            FnEnum::OpLen3(_) => {
+                let operand = self.memory.borrow().read_word(self.pc + 1);
+                rt_print!("\t" + instr.disas + "\n", operand);
+            },
+        }
+    }
 
 
     // Opcodes
@@ -212,7 +329,7 @@ impl CPU {
         if self.flags_is_zero() == false
         {
             self.jr_nn(offset);
-            self.clock += 4;
+            self.cpu_clock += 4;
         }
     }
 
@@ -258,7 +375,7 @@ impl CPU {
     pub fn jr_z(&mut self, offset:i8) {
         if self.flags_is_zero() {
             self.pc = self.pc.wrapping_add(offset as u16);
-            self.clock += 4;
+            self.cpu_clock += 4;
         }
     }
 
@@ -283,7 +400,7 @@ impl CPU {
     pub fn jr_nc(&mut self, offset: i8) {
         if !self.flags_is_carry() {
             self.pc = self.pc.wrapping_add(offset as u16);
-            self.clock += 4;
+            self.cpu_clock += 4;
         }
     }
 
@@ -312,7 +429,7 @@ impl CPU {
     pub fn jr_c(&mut self, offset: i8) {
         if self.flags_is_carry() {
             self.pc = self.pc.wrapping_add(offset as u16);
-            self.clock += 4;
+            self.cpu_clock += 4;
         }
     }
     pub fn add_hl_sp(&mut self) {
@@ -701,25 +818,25 @@ impl CPU {
     pub fn jp_z(&mut self, address: u16) {
         if self.flags_is_zero() {
             self.pc = address;
-            self.clock += 4;
+            self.cpu_clock += 4;
         }
     }
     pub fn jp_nz(&mut self, address: u16) {
         if !self.flags_is_zero() {
             self.pc = address;
-            self.clock += 4;
+            self.cpu_clock += 4;
         }
     }
     pub fn jp_nc(&mut self, address: u16) {
         if !self.flags_is_carry() {
             self.pc = address;
-            self.clock += 4;
+            self.cpu_clock += 4;
         }
     }
     pub fn jp_c(&mut self, address: u16) {
         if self.flags_is_carry() {
             self.pc = address;
-            self.clock += 4;
+            self.cpu_clock += 4;
         }
     }
 
@@ -732,25 +849,25 @@ impl CPU {
     pub fn call_z(&mut self, address: u16) {
         if self.flags_is_zero() {
             self.call_nn(address);
-            self.clock += 12; // branch takes additional 12 cycles
+            self.cpu_clock += 12; // branch takes additional 12 cycles
         }
     }
     pub fn call_nz(&mut self, address: u16) {
         if !self.flags_is_zero() {
             self.call_nn(address);
-            self.clock += 12;
+            self.cpu_clock += 12;
         }
     }
     pub fn call_nc(&mut self, address: u16) {
         if !self.flags_is_carry() {
             self.call_nn(address);
-            self.clock += 12;
+            self.cpu_clock += 12;
         }
     }
     pub fn call_c(&mut self, address: u16) {
         if self.flags_is_carry() {
             self.call_nn(address);
-            self.clock += 12;
+            self.cpu_clock += 12;
         }
     }
 
@@ -796,25 +913,25 @@ impl CPU {
     }
     pub fn ret_z(&mut self) {
         if self.flags_is_zero() {
-            self.clock += 12;
+            self.cpu_clock += 12;
             self.ret();
         }
     }
     pub fn ret_nz(&mut self) {
         if !self.flags_is_zero() {
-            self.clock += 12;
+            self.cpu_clock += 12;
             self.ret();
         }
     }
     pub fn ret_nc(&mut self) {
         if !self.flags_is_carry() {
-            self.clock += 12;
+            self.cpu_clock += 12;
             self.ret();
         }
     }
     pub fn ret_c(&mut self) {
         if self.flags_is_carry() {
-            self.clock += 12;
+            self.cpu_clock += 12;
             self.ret();
         }
     }

@@ -69,7 +69,7 @@ pub struct Memory {
 }
 impl Memory {
     fn default() -> Self {
-        return Self{
+        return Self {
             ram: vec![0; 0x10000],
             cartridge_type:0u8,
             mbc_1_bank_nn:0u8,
@@ -127,8 +127,8 @@ impl Memory {
     }
 
 
-    pub fn if_isset (&mut self, bitmask:u8) -> u8 {
-        return self.ram[IFLAGS as usize] & bitmask;
+    pub fn if_isset (&self, bitmask:u8) -> bool {
+        return self.ram[IFLAGS as usize] & bitmask != 0;
     }
     pub fn if_set (&mut self, bitmask:u8) {
         self.ram[IFLAGS as usize] = self.ram[IFLAGS as usize] | bitmask;
@@ -138,8 +138,8 @@ impl Memory {
     }
 
     // IE Interrupts Enable Register macros
-    pub fn ie_isset (&mut self, bitmask:u8) -> u8{
-        return self.ram[IE as usize] & bitmask;
+    pub fn ie_isset (&self, bitmask:u8) -> bool{
+        return self.ram[IE as usize] & bitmask != 0;
     }
     pub fn ie_set (&mut self, bitmask:u8) {
         self.ram[IE as usize] = self.ram[IE as usize] | bitmask;
