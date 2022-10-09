@@ -18,8 +18,8 @@ pub struct Gameboy {
 impl Gameboy {
     pub fn new() -> Self {
         let mem: RefCell<Memory> = RefCell::new(Memory::default());
-        let mut proc = CPU::new(mem);
         mem.borrow_mut().load_rom("testroms/gb-test-roms-master/cpu_instrs/cpu_instrs.gb".to_string());
+        let mut proc = CPU::new(mem);
         
 
         return Self {

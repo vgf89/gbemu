@@ -1,3 +1,5 @@
+use std::fs;
+
 // MEMORY_MAP
 pub const MEMORY_SIZE:usize = 0x10000;
 
@@ -68,7 +70,7 @@ pub struct Memory {
     mbc_1_banks:Vec<[u8; 0x4000]>, // # 125 possible memory banks of 0x4000 size
 }
 impl Memory {
-    fn default() -> Self {
+    pub fn default() -> Self {
         return Self {
             ram: vec![0; 0x10000],
             cartridge_type:0u8,
@@ -83,12 +85,16 @@ impl Memory {
         use std::io::prelude::*;
 
         let path = Path::new(&filepath);
-        let file = match File::open(&path) {
+        let metadata = match fs::metadata(path) {
+            Err(why) => panic!("couldn't get file metadata for {}: {}", path.to_str().unwrap(), why),
+            Ok(metadata) => metadata,
+        };
+        let mut file = match File::open(&path) {
             Ok(file) => file,
             Err(why) => panic!("couldn't open file: {}", why),
         };
-        let mut buf;
-        match file.read_to_end(buf) {
+        let mut buf = vec![0; metadata.len() as usize];
+        match file.read_to_end(&mut buf) {
             Err(why) => panic!("couldn't read file: {}", why),
             Ok(_) => (),
         };

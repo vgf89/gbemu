@@ -245,17 +245,17 @@ impl CPU {
             FnEnum::OpLen1(_) => (),
             FnEnum::OpLen2(_) => {
                 let operand = self.memory.borrow().read_byte(self.pc + 1);
-                let asdf = instr.disas;
-                asdf.format(&[operand]);
-                print!("\t{}", asdf.format(&[operand]));
+                let asm = instr.disas;
+                //asm.format(&[operand]);
+                print!("\t{}\n", asm.format(&[operand]));
             },
             FnEnum::OpLen2i(_) => {
                 let operand = self.memory.borrow().read_byte(self.pc + 1) as i8;
-                rt_print!("\t" + instr.disas + "\n", operand);
+                print!("\t{}\n", instr.disas.format(&[operand]));
             },
             FnEnum::OpLen3(_) => {
                 let operand = self.memory.borrow().read_word(self.pc + 1);
-                rt_print!("\t" + instr.disas + "\n", operand);
+                print!("\t{}\n", instr.disas.format(&[operand]));
             },
         }
     }
