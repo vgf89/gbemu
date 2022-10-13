@@ -1,0 +1,5 @@
+- [ ] Implement serial output
+- [ ] Test and fix CPU
+- [ ] Implement PPU
+- [ ] Implement Input
+- [ ] Implement Sound

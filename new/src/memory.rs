@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, io::SeekFrom};
 
 // MEMORY_MAP
 pub const MEMORY_SIZE:usize = 0x10000;
@@ -93,7 +93,8 @@ impl Memory {
             Ok(file) => file,
             Err(why) => panic!("couldn't open file: {}", why),
         };
-        let mut buf = vec![0; metadata.len() as usize];
+        //file.seek(SeekFrom::Start(0));
+        let mut buf = vec![];
         match file.read_to_end(&mut buf) {
             Err(why) => panic!("couldn't read file: {}", why),
             Ok(_) => (),
@@ -107,9 +108,24 @@ impl Memory {
 
         match cartridge_mode {
             NO_MBC => {
-                println!("Loading rom-only game");
+                println!("Loading ROM-only Cartridge.");
                 for (i, val) in buf.iter().enumerate() {
-                    self.write_byte(i as u16, *val);
+                    let bank = i/0x4000;
+                    let row = i%0x4000;
+                    //print!("{} {} {}    ", bank, row, val);
+                    self.mbc_1_banks[bank][row] = *val;
+                }
+                //println!("\n");
+            },
+            MBC1 => {
+                println!("Loading MBC1 Cartidge");
+                file.seek(SeekFrom::Start(0)).unwrap();
+                let mut buf = [0u8; 0x4000];
+                let mut i = 0;
+                while file.read_exact(&mut buf).is_ok() {
+                    println!("Reading ROM Bank {}", i);
+                    self.mbc_1_banks[i] = buf.clone();
+                    i += 1;
                 }
             },
             _ => panic!("cartidge mode not supported: {}", cartridge_mode),
@@ -118,6 +134,9 @@ impl Memory {
     }
 
     pub fn read_byte(&self, address:u16) -> u8 {
+        if address < 0x4000 {
+            return self.mbc_1_banks[0][address as usize];
+        }
         if self.cartridge_type == MBC1 && address >= 0x4000 && address < 0x8000 {
             return self.mbc_1_banks[self.mbc_1_bank_nn as usize][address as usize - 0x4000];
         }
@@ -140,9 +159,10 @@ impl Memory {
     }
 
     pub fn write_byte(&mut self, address:u16, val:u8) {
-        if address == 0xff02 && val == 0x81 {
-
-            print!("{}", self.read_byte(0xff01) as char);
+        if /*address == 0xff02  &&*/ val == 0x81 { // Print link cable output to terminal
+            println!("{}", self.read_byte(0xff01) as char);
+            use std::io::{self, Write};
+            io::stdout().flush().unwrap();
         } else if address >= 0xfea0 && address < 0xff00 {
             // Unusable memory, do nothing
         } else if address == 0xff00 {

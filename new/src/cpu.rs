@@ -1,5 +1,5 @@
 use crate::{memory::*, ops_table};
-use std::{cell::RefCell};
+use std::{cell::RefCell, string, io::stdin};
 use crate::ops_table::*;
 
 #[derive(Default)]
@@ -130,6 +130,11 @@ impl CPU {
             return;
         }
 
+
+        // Debug print & wait to step
+        self.print_status();
+        stdin().read_line(&mut String::new()).unwrap();
+
         // Handle Interrupts
         if self.ime_flag {
             if self.memory.borrow().ie_isset(I_VBLANK) && self.memory.borrow().if_isset(I_VBLANK) {
@@ -184,13 +189,24 @@ impl CPU {
         // FIXME: Implement
 
         let opcode_length;
+        let mut operand8 = 0;
+        let mut operand16 = 0;
         let opcode = self.memory.borrow().read_byte(self.pc);
         let inst: &Instruction = &ops_table::INSTRUCTIONS[opcode as usize];
         match &inst.execute {
             FnEnum::OpLen1(_) => { opcode_length = 1; },
-            FnEnum::OpLen2(_) => { opcode_length = 2; },
-            FnEnum::OpLen2i(_) => { opcode_length = 2; },
-            FnEnum::OpLen3(_) => { opcode_length = 3; },
+            FnEnum::OpLen2(_) => {
+                opcode_length = 2;
+                operand8 = self.memory.borrow().read_byte(self.pc + 1);
+            },
+            FnEnum::OpLen2i(_) => {
+                opcode_length = 2;
+                operand8 = self.memory.borrow().read_byte(self.pc + 1);
+            },
+            FnEnum::OpLen3(_) => {
+                opcode_length = 3;
+                operand16 = self.memory.borrow().read_word(self.pc + 1);
+            },
             FnEnum::STOP => todo!(),
             FnEnum::UNDEFINED => todo!(),
         }
@@ -217,48 +233,80 @@ impl CPU {
                 (op)(self);
             },
             FnEnum::OpLen2(op) => {
-                let operand = self.memory.borrow().read_byte(self.pc + 1);
-                (op)(self, operand);
+                (op)(self, operand8);
             },
             FnEnum::OpLen2i(op) => {
-                let operand = self.memory.borrow().read_byte(self.pc + 1) as i8;
-                (op)(self, operand);
+                (op)(self, operand8 as i8);
             },
             FnEnum::OpLen3(op) => {
-                let operand = self.memory.borrow().read_word(self.pc + 1);
-                (op)(self, operand);
+                (op)(self, operand16);
             },
             FnEnum::STOP => todo!(),
             FnEnum::UNDEFINED => todo!(),
         }
     }
 
+    pub fn print_status(&self) {
+        print!("REGS ");
+        self.print_regs();
+        print!(",  DISAS: ");
+        self.print_disas(self.pc);
+        //print!("\n");
+    }
 
-    fn print_op(&self, instr: Instruction) {
-        //use rt_format::*;
-        use dyn_fmt::AsStrFormatExt;
-        let opcode = self.memory.borrow().read_byte(self.pc);
-        print!("{:x}\t{:x}:", self.pc, opcode);
+    pub fn print_regs(&self) {
+        print!("pc:  {:#06X},  af: {:#06X},  bc: {:#06X},  de: {:#06X},  hl: {:#06X}->{:#04X}", self.pc, self.af(), self.bc(), self.de(), self.hl(), self.hlp());
+    }
+
+    pub fn print_disas(&self, address: u16) {
+        let opcode = self.memory.borrow().read_byte(address);
+        let inst: &Instruction = &ops_table::INSTRUCTIONS[opcode as usize];
+        println!("{}", self.print_op(inst));
+    }
+
+    fn op_format_helper_u8(opcode: &str, operand: u8) -> String {
+        return opcode.replace(
+            "{:#04X}",
+            format!("{:#04X}", operand).as_str()
+        );
+    }
+
+    fn op_format_helper_i8(opcode: &str, operand: i8) -> String {
+        return opcode.replace(
+            "{:+#04X}",
+            format!("{:+#04X}", operand).as_str()
+        );
+    }
+
+    fn op_format_helper_u16(opcode: &str, operand: u16) -> String {
+        return opcode.replace(
+            "{:#06X}",
+            format!("{:#06X}", operand).as_str()
+        );
+    }
+
+    fn print_op(&self, instr: &Instruction) -> String {
         match instr.execute {
             FnEnum::STOP => todo!(),
             FnEnum::UNDEFINED => todo!(),
-            FnEnum::OpLen1(_) => (),
+            FnEnum::OpLen1(_) => {
+                return instr.disas.to_string();
+            },
             FnEnum::OpLen2(_) => {
                 let operand = self.memory.borrow().read_byte(self.pc + 1);
-                let asm = instr.disas;
-                //asm.format(&[operand]);
-                print!("\t{}\n", asm.format(&[operand]));
+                return CPU::op_format_helper_u8(instr.disas, operand);
             },
             FnEnum::OpLen2i(_) => {
                 let operand = self.memory.borrow().read_byte(self.pc + 1) as i8;
-                print!("\t{}\n", instr.disas.format(&[operand]));
+                return CPU::op_format_helper_i8(instr.disas, operand);
             },
             FnEnum::OpLen3(_) => {
                 let operand = self.memory.borrow().read_word(self.pc + 1);
-                print!("\t{}\n", instr.disas.format(&[operand]));
+                return CPU::op_format_helper_u16(instr.disas, operand);
             },
         }
     }
+
 
 
     // Opcodes
@@ -816,6 +864,7 @@ impl CPU {
 
 
     pub fn jp_nn(&mut self, address: u16) {
+        
         self.pc = address;
     }
     pub fn jp_z(&mut self, address: u16) {
