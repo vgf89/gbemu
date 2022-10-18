@@ -57,7 +57,7 @@ impl Gameboy {
         self.processor.memory.borrow_mut().write_byte(0xff23, 0xbf);
         self.processor.memory.borrow_mut().write_byte(0xff24, 0x77);
         self.processor.memory.borrow_mut().write_byte(0xff25, 0xf3);
-        self.processor.memory.borrow_mut().write_byte(0xff26, 0xf1-1); //what does this mean [$FF26, $F1-GB, $F0-SGB ); NR52
+        self.processor.memory.borrow_mut().write_byte(0xff26, 0xf1); // [$FF26, $F1 = GB, $F0 = SGB ); NR52
         self.processor.memory.borrow_mut().write_byte(0xff40, 0x91);
         self.processor.memory.borrow_mut().write_byte(0xff42, 0x00);
         self.processor.memory.borrow_mut().write_byte(0xff43, 0x00);

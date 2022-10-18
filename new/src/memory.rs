@@ -152,14 +152,9 @@ impl Memory {
         return self.ram[address as usize];
     }
 
-    pub fn read_word(&self, address:u16) -> u16 {
-        let c1 = self.read_byte(address);
-        let c2 = self.read_byte(address + 1);
-        return ((c2 as u16) << 8) | c1 as u16;
-    }
 
     pub fn write_byte(&mut self, address:u16, val:u8) {
-        if /*address == 0xff02  &&*/ val == 0x81 { // Print link cable output to terminal
+        if address == 0xff02  && val == 0x81 { // Print link cable output to terminal
             println!("{}", self.read_byte(0xff01) as char);
             use std::io::{self, Write};
             io::stdout().flush().unwrap();
@@ -179,11 +174,18 @@ impl Memory {
         }
     }
 
+    // NOTE: Z80 is little endian (least significant byte is stored at the lower address)
+    pub fn read_word(&self, address:u16) -> u16 {
+        let lsb = self.read_byte(address);
+        let msb = self.read_byte(address + 1);
+        return ((msb as u16) << 8) | lsb as u16;
+    }
+
     pub fn write_word(&mut self, address:u16, val:u16) {
-        let c1 = (val & 0xff) as u8;
-        let c2 = ((val >> 8) & 0xff) as u8;
-        self.write_byte(address, c1);
-        self.write_byte(address + 1, c2);
+        let lsb = (val & 0xff) as u8;
+        let msb = ((val >> 8) & 0xff) as u8;
+        self.write_byte(address, lsb);
+        self.write_byte(address + 1, msb);
     }
 
 

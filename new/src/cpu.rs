@@ -27,6 +27,11 @@ pub struct CPU {
     pub memory: RefCell<Memory>,
 }
 
+
+pub enum RegEnum {
+    A,F,B,C,D,E,H,L,
+}
+
 pub const FLAGS_ZERO:u8 = 1 << 7;
 pub const FLAGS_NEGATIVE:u8 = 1 << 6;
 pub const FLAGS_HALFCARRY:u8 = 1 << 5;
@@ -247,7 +252,7 @@ impl CPU {
     }
 
     pub fn print_status(&self) {
-        print!("REGS ");
+        //print!("REGS ");
         self.print_regs();
         print!(",  DISAS: ");
         self.print_disas(self.pc);
@@ -255,7 +260,7 @@ impl CPU {
     }
 
     pub fn print_regs(&self) {
-        print!("pc:  {:#06X},  af: {:#06X},  bc: {:#06X},  de: {:#06X},  hl: {:#06X}->{:#04X}", self.pc, self.af(), self.bc(), self.de(), self.hl(), self.hlp());
+        print!("pc:  {:#06X},  af: {:#06X},  bc: {:#06X},  de: {:#06X},  hl: {:#06X}->{:#04X}, flags: {:#010b}", self.pc, self.af(), self.bc(), self.de(), self.hl(), self.hlp(), self.f);
     }
 
     pub fn print_disas(&self, address: u16) {
@@ -493,8 +498,52 @@ impl CPU {
     pub fn dec_sp(&mut self) {
         self.sp -= 1;
     }
+    fn reset_inc_flags(&mut self) {
+        self.flags_clear(FLAGS_ZERO);
+        self.flags_clear(FLAGS_NEGATIVE);
+        self.flags_clear(FLAGS_HALFCARRY);
+    }
+    pub fn inc_n(&mut self, reg: RegEnum)  {
+        self.reset_inc_flags();
+
+        let originalreg;
+        match reg {
+            RegEnum::A => originalreg = self.a,
+            RegEnum::F => originalreg = self.f,
+            RegEnum::B => originalreg = self.b,
+            RegEnum::C => originalreg = self.c,
+            RegEnum::D => originalreg = self.d,
+            RegEnum::E => originalreg = self.e,
+            RegEnum::H => originalreg = self.h,
+            RegEnum::L => originalreg = self.l,
+        }
+
+        // Half Carry
+        let halfcarry: bool;
+        if (((originalreg & 0xf) + 1 ) & 0x10) == 0x10 {
+            self.flags_set(FLAGS_HALFCARRY);
+        }
+
+        // Zero Flag
+        if originalreg + 1 == 0 {
+            self.flags_set(FLAGS_ZERO);
+        }
+
+        // Increment
+        match reg {
+            RegEnum::A => self.a += 1,
+            RegEnum::F => self.f += 1,
+            RegEnum::B => self.b += 1,
+            RegEnum::C => self.c += 1,
+            RegEnum::D => self.d += 1,
+            RegEnum::E => self.e += 1,
+            RegEnum::H => self.h += 1,
+            RegEnum::L => self.l += 1,
+        }
+    }
     pub fn inc_a(&mut self) {
-        self.a += 1;
+        // FIXME: DO THIS FOR ALL INC AND DEC
+        self.inc_n(RegEnum::A);
     }
     pub fn dec_a(&mut self) {
         self.a -= 1;
