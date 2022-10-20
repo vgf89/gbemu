@@ -27,11 +27,6 @@ pub struct CPU {
     pub memory: RefCell<Memory>,
 }
 
-
-pub enum RegEnum {
-    A,F,B,C,D,E,H,L,
-}
-
 pub const FLAGS_ZERO:u8 = 1 << 7;
 pub const FLAGS_NEGATIVE:u8 = 1 << 6;
 pub const FLAGS_HALFCARRY:u8 = 1 << 5;
@@ -320,11 +315,24 @@ impl CPU {
         // do nothing
     }
 
+    pub fn inc_a(&mut self) { self.a = self.inc_n(self.a); }
+    pub fn inc_b(&mut self) { self.b = self.inc_n(self.b); }
+    pub fn inc_c(&mut self) { self.c = self.inc_n(self.c); }
+    pub fn inc_d(&mut self) { self.d = self.inc_n(self.d); }
+    pub fn inc_e(&mut self) { self.e = self.inc_n(self.e); }
+
+    pub fn dec_a(&mut self) { self.a = self.dec_n(self.a); }
+    pub fn dec_b(&mut self) { self.b = self.dec_n(self.b); }
+    pub fn dec_c(&mut self) { self.c = self.dec_n(self.c); }
+    pub fn dec_d(&mut self) { self.d = self.dec_n(self.d); }
+    pub fn dec_e(&mut self) { self.e = self.dec_n(self.e); }
+
+    pub fn inc_bc(&mut self) { self.set_bc(self.bc() + 1); }
+    pub fn inc_de(&mut self) { self.set_de(self.de() + 1); }
+
     pub fn ld_bc_nn(&mut self, value: u16) { self.set_bc(value); }
     pub fn ld_bcp_a(&mut self) { self.memory.borrow_mut().write_byte(self.bc(), self.a); }
-    pub fn inc_bc(&mut self) { self.set_bc(self.bc() + 1); }
-    pub fn inc_b(&mut self) { self.b += 1; }
-    pub fn dec_b(&mut self) { self.b -= 1; }
+
     pub fn ld_b_n(&mut self, value: u8) {self.b = value;}
     pub fn rlca(&mut self) {
         {
@@ -341,8 +349,6 @@ impl CPU {
     pub fn add_hl_bc(&mut self) { self.add_hl_nn(self.bc()); }
     pub fn ld_a_bcp(&mut self) { self.a = self.memory.borrow_mut().read_byte(self.bc()); }
     pub fn dec_bc(&mut self) { self.set_bc(self.bc() - 1); }
-    pub fn inc_c(&mut self) { self.c += 1; }
-    pub fn dec_c(&mut self) { self.c -= 1; }
     pub fn ld_c_n(&mut self, value: u8) { self.c = value; }
 
     pub fn rrca(&mut self) {
@@ -354,9 +360,7 @@ impl CPU {
 
     pub fn ld_de_nn(&mut self, value: u16) { self.set_de(value); }
     pub fn ld_dep_a(&mut self) { self.memory.borrow_mut().write_byte(self.de(), self.a); }
-    pub fn inc_de(&mut self) { self.set_de(self.de() + 1); }
-    pub fn inc_d(&mut self) { self.d += 1; }
-    pub fn dec_d(&mut self) { self.d -= 1; }
+
     pub fn ld_d_n(&mut self, value: u8) {self.d = value;}
 
     pub fn rla(&mut self) {
@@ -370,8 +374,6 @@ impl CPU {
     pub fn add_hl_de(&mut self) { self.add_hl_nn(self.de()); }
     pub fn ld_a_dep(&mut self) { self.a = self.memory.borrow_mut().read_byte(self.de()); }
     pub fn dec_de(&mut self) { self.set_de(self.de() - 1); }
-    pub fn inc_e(&mut self) { self.e += 1; }
-    pub fn dec_e(&mut self) { self.e -= 1; }
     pub fn ld_e_n(&mut self, value: u8) { self.c = value; }
 
     
@@ -498,56 +500,40 @@ impl CPU {
     pub fn dec_sp(&mut self) {
         self.sp -= 1;
     }
-    fn reset_inc_flags(&mut self) {
+
+    // Sets flags and return the new register value for instruction inc_N
+    // We return the new value instead of setting it directly due to borrow rules issues >:(\
+
+    pub fn inc_n(&mut self, reg: u8) -> u8 {
         self.flags_clear(FLAGS_ZERO);
         self.flags_clear(FLAGS_NEGATIVE);
         self.flags_clear(FLAGS_HALFCARRY);
-    }
-    pub fn inc_n(&mut self, reg: RegEnum)  {
-        self.reset_inc_flags();
-
-        let originalreg;
-        match reg {
-            RegEnum::A => originalreg = self.a,
-            RegEnum::F => originalreg = self.f,
-            RegEnum::B => originalreg = self.b,
-            RegEnum::C => originalreg = self.c,
-            RegEnum::D => originalreg = self.d,
-            RegEnum::E => originalreg = self.e,
-            RegEnum::H => originalreg = self.h,
-            RegEnum::L => originalreg = self.l,
-        }
-
         // Half Carry
-        let halfcarry: bool;
-        if (((originalreg & 0xf) + 1 ) & 0x10) == 0x10 {
+        if (((reg & 0xf) + 1 ) & 0x10) == 0x10 {
             self.flags_set(FLAGS_HALFCARRY);
         }
-
         // Zero Flag
-        if originalreg + 1 == 0 {
+        if reg + 1 == 0 {
             self.flags_set(FLAGS_ZERO);
         }
+        return reg + 1;
+    }
 
-        // Increment
-        match reg {
-            RegEnum::A => self.a += 1,
-            RegEnum::F => self.f += 1,
-            RegEnum::B => self.b += 1,
-            RegEnum::C => self.c += 1,
-            RegEnum::D => self.d += 1,
-            RegEnum::E => self.e += 1,
-            RegEnum::H => self.h += 1,
-            RegEnum::L => self.l += 1,
+    pub fn dec_n(&mut self, reg: u8) -> u8 {
+        self.flags_clear(FLAGS_ZERO);
+        self.flags_set(FLAGS_NEGATIVE);
+        self.flags_clear(FLAGS_HALFCARRY);
+        // Half Carry
+        if (((reg & 0xf) - 1 ) & 0x10) == 0x10 {
+            self.flags_set(FLAGS_HALFCARRY);
         }
+        // Zero Flag
+        if reg - 1 == 0 {
+            self.flags_set(FLAGS_ZERO);
+        }
+        return reg - 1;
     }
-    pub fn inc_a(&mut self) {
-        // FIXME: DO THIS FOR ALL INC AND DEC
-        self.inc_n(RegEnum::A);
-    }
-    pub fn dec_a(&mut self) {
-        self.a -= 1;
-    }
+    
     pub fn ld_a_n(&mut self, value: u8) {
         self.a = value;
     }
@@ -904,11 +890,6 @@ impl CPU {
         self.flags_clear(FLAGS_NEGATIVE);
         self.flags_clear(FLAGS_HALFCARRY);
         self.flags_clear(FLAGS_CARRY);
-    }
-    pub fn reset_inc_flags(&mut self) {
-        self.flags_clear(FLAGS_ZERO);
-        self.flags_clear(FLAGS_NEGATIVE);
-        self.flags_clear(FLAGS_HALFCARRY);
     }
 
 
