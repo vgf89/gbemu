@@ -272,10 +272,17 @@ impl CPU {
     }
 
     fn op_format_helper_i8(opcode: &str, operand: i8) -> String {
-        return opcode.replace(
-            "{:+#04X}",
-            format!("{:+#04X}", operand).as_str()
-        );
+        if operand >= 0 {
+            return opcode.replace(
+                "{:+#04X}",
+                format!("{:#04X}", operand).as_str()
+            );
+        } else {
+            return opcode.replace(
+                "{:+#04X}",
+                format!("-{:#04X}", -operand).as_str()
+            );
+        }
     }
 
     fn op_format_helper_u16(opcode: &str, operand: u16) -> String {
@@ -509,14 +516,14 @@ impl CPU {
         self.flags_clear(FLAGS_NEGATIVE);
         self.flags_clear(FLAGS_HALFCARRY);
         // Half Carry
-        if (((reg & 0xf) + 1 ) & 0x10) == 0x10 {
+        if (((reg & 0xf).wrapping_add(1)) & 0x10) == 0x10 {
             self.flags_set(FLAGS_HALFCARRY);
         }
         // Zero Flag
-        if reg + 1 == 0 {
+        if reg.wrapping_add(1) == 0 {
             self.flags_set(FLAGS_ZERO);
         }
-        return reg + 1;
+        return reg.wrapping_add(1);
     }
 
     pub fn dec_n(&mut self, reg: u8) -> u8 {
@@ -524,14 +531,14 @@ impl CPU {
         self.flags_set(FLAGS_NEGATIVE);
         self.flags_clear(FLAGS_HALFCARRY);
         // Half Carry
-        if (((reg & 0xf) - 1 ) & 0x10) == 0x10 {
+        if (((reg & 0xf).wrapping_sub(1)) & 0x10) == 0x10 {
             self.flags_set(FLAGS_HALFCARRY);
         }
         // Zero Flag
-        if reg - 1 == 0 {
+        if reg.wrapping_sub(1) == 0 {
             self.flags_set(FLAGS_ZERO);
         }
-        return reg - 1;
+        return reg.wrapping_sub(1);
     }
     
     pub fn ld_a_n(&mut self, value: u8) {
