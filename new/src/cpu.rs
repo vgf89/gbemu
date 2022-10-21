@@ -1,5 +1,5 @@
 use crate::{memory::*, ops_table};
-use std::{cell::RefCell, string, io::stdin};
+use std::{cell::RefCell, string, io::stdin, borrow::Borrow};
 use crate::ops_table::*;
 
 #[derive(Default)]
@@ -26,6 +26,10 @@ pub struct CPU {
 
     pub memory: RefCell<Memory>,
     broken: bool,
+
+    fulldiv: u16,
+    timer_clock: u16,
+    preEdgeDetectDelay: bool,
 }
 
 pub const FLAGS_ZERO:u8 = 1 << 7;
@@ -57,52 +61,11 @@ impl CPU {
             halt_bug: false,
             memory: mem,
             broken: false,
+
+            fulldiv: 0,
+            timer_clock: 0,
+            preEdgeDetectDelay: false,
         };
-    }
-
-    // Combined register getters/setters
-    pub fn af(&self) -> u16 {
-        return (self.a as u16) << 8 | (self.f as u16);
-    }
-    pub fn set_af(&mut self, af:u16) {
-        self.a = ((af >> 8) & 0xff) as u8;
-        self.f = (af & 0xff) as u8;
-    }
-
-    pub fn bc(&self) -> u16 {
-        return (self.b as u16) << 8 | (self.c as u16);
-    }
-    pub fn set_bc(&mut self, value:u16) {
-        self.b = ((value >> 8) & 0xff) as u8;
-        self.c = (value & 0xff) as u8;
-    }
-
-    pub fn de(&self) -> u16 {
-        return (self.d as u16) << 8 | (self.e as u16);
-    }
-    pub fn set_de(&mut self, value:u16) {
-        self.d = ((value >> 8) & 0xff) as u8;
-        self.e = (value & 0xff) as u8;
-    }
-
-    pub fn hl(&self) -> u16 {
-        return (self.h as u16) << 8 | (self.l as u16);
-    }
-    pub fn set_hl(&mut self, value:u16) {
-        self.h = ((value >> 8) & 0xff) as u8;
-        self.l = (value & 0xff) as u8;
-    }
-    fn bcp(&self) -> u8 {
-        return self.memory.borrow().read_byte(self.bc());
-    }
-    fn dep(&self) -> u8 {
-        return self.memory.borrow().read_byte(self.de());
-    }
-    fn hlp(&self) -> u8 {
-        return self.memory.borrow().read_byte(self.hl());
-    }
-    fn set_hlp(&mut self, val: u8) {
-        self.memory.borrow_mut().write_byte(self.hl(), val);
     }
 
     pub fn flags_is_zero(&self) -> bool{
@@ -268,6 +231,69 @@ impl CPU {
         }
     }
 
+    // return the bit in the LSB nibble selected by selector nibble
+    fn logic_mux4b(&self, mut value: u8, mut selector: u8) -> bool {
+        value &= 0xf;
+        selector &= 0x3;
+
+        if (value & (1 << selector)) != 0 {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
+    fn logic_and(&self, mut a: u8, mut b: u8) -> bool {
+        a &= 1;
+        b &= 1;
+        return (a & b) > 0;
+    }
+    
+    fn logic_not(&self, mut a: u8) -> bool {
+        a &= 1;
+        if a != 0 {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    pub fn timer_step(&mut self) {
+        //memory.TIMA; // Timer Counter
+        //memory.TMA; // Timer Modulo (decides when overflow, and thus interrupt, happens)
+        //memory.TAC; // Timer Control.  2. Timer enable  1-0. Input Clock Select
+        self.fulldiv = self.fulldiv.wrapping_add(1);
+        self.memory.borrow_mut().write_word(DIV, self.fulldiv >> 8);
+    
+        /* Timer increment circuit */
+        let mut mux1v: u8 = ((self.memory.borrow().read_word(DIV) & (1 << 1)) != 0) as u8;
+        mux1v |= (((self.fulldiv & (1 << 3)) != 0) as u8) << 1;
+        mux1v |= (((self.fulldiv & (1 << 5)) != 0) as u8) << 2;
+        mux1v |= (((self.fulldiv & (1 << 7)) != 0) as u8) << 3;
+        
+        let tacEnable: u8 = ((self.memory.borrow().read_word(TAC) & (1 << 2)) != 0) as u8;
+        let tacFreq: u8 = (self.memory.borrow().read_word(TAC) & 0x3) as u8;
+        let preEdgeDetect: bool = self.logic_and(self.logic_mux4b(mux1v,tacFreq) as u8,tacEnable);
+    
+        let edgeDetectNot : bool = self.logic_not(preEdgeDetect as u8);
+        let edgeDetectResult: bool = self.logic_and(edgeDetectNot as u8, self.preEdgeDetectDelay as u8);
+        // Check if timer increment
+        if edgeDetectResult {
+            let val = self.memory.borrow().read_word(TIMA);
+            self.memory.borrow_mut().write_word(TIMA, val);//memory.TIMA++;
+            if (self.memory.borrow().read_word(TIMA) == 0) { // overflowed
+                let val = self.memory.borrow().read_word(TIMA);
+                self.memory.borrow_mut().write_word(TIMA, val);
+                if /*IE_ISSET(I_TIMER) && */!(self.memory.borrow().if_isset(I_TIMER)) {
+                    //fflush(stdout);
+                    self.memory.borrow_mut().if_set(I_TIMER);
+                }
+            }
+        }
+        
+        self.preEdgeDetectDelay = preEdgeDetect;
+    }
+
     pub fn print_status(&self) {
         //print!("REGS ");
         self.print_regs();
@@ -342,6 +368,51 @@ impl CPU {
     pub fn nop(&mut self) 
     {
         // do nothing
+    }
+
+    // Combined register getters/setters
+    pub fn af(&self) -> u16 {
+        return (self.a as u16) << 8 | (self.f as u16);
+    }
+    pub fn set_af(&mut self, af:u16) {
+        self.a = ((af >> 8) & 0xff) as u8;
+        self.f = (af & 0xff) as u8;
+    }
+
+    pub fn bc(&self) -> u16 {
+        return (self.b as u16) << 8 | (self.c as u16);
+    }
+    pub fn set_bc(&mut self, value:u16) {
+        self.b = ((value >> 8) & 0xff) as u8;
+        self.c = (value & 0xff) as u8;
+    }
+
+    pub fn de(&self) -> u16 {
+        return (self.d as u16) << 8 | (self.e as u16);
+    }
+    pub fn set_de(&mut self, value:u16) {
+        self.d = ((value >> 8) & 0xff) as u8;
+        self.e = (value & 0xff) as u8;
+    }
+
+    pub fn hl(&self) -> u16 {
+        return (self.h as u16) << 8 | (self.l as u16);
+    }
+    pub fn set_hl(&mut self, value:u16) {
+        self.h = ((value >> 8) & 0xff) as u8;
+        self.l = (value & 0xff) as u8;
+    }
+    fn bcp(&self) -> u8 {
+        return self.memory.borrow().read_byte(self.bc());
+    }
+    fn dep(&self) -> u8 {
+        return self.memory.borrow().read_byte(self.de());
+    }
+    fn hlp(&self) -> u8 {
+        return self.memory.borrow().read_byte(self.hl());
+    }
+    fn set_hlp(&mut self, val: u8) {
+        self.memory.borrow_mut().write_byte(self.hl(), val);
     }
 
     pub fn inc_a(&mut self) { self.a = self.inc_n(self.a); }

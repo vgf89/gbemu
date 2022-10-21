@@ -20,8 +20,8 @@ impl Gameboy {
         let mem: RefCell<Memory> = RefCell::new(Memory::default());
         //mem.borrow_mut().load_rom("testroms/gb-test-roms-master/cpu_instrs/individual/01-special.gb".to_string());
         //mem.borrow_mut().load_rom("/home/holopengin/repos/gbemu/new/testroms/mts-20220522-1522-55c535c/acceptance/boot_regs-dmg0.gb".to_string());
-        mem.borrow_mut().load_rom("testroms/gb-test-roms-master/cpu_instrs/cpu_instrs.gb".to_string());
-        //mem.borrow_mut().load_rom("testroms/gb-test-roms-master/instr_timing/instr_timing.gb".to_string());
+        //mem.borrow_mut().load_rom("testroms/gb-test-roms-master/cpu_instrs/cpu_instrs.gb".to_string());
+        mem.borrow_mut().load_rom("testroms/gb-test-roms-master/instr_timing/instr_timing.gb".to_string());
         let proc = CPU::new(mem);
         
 
@@ -94,7 +94,7 @@ impl Gameboy {
         while self.clock < MAX_CLOCK {
             //self.updateInput();
             self.processor.cpu_step(self.clock);
-            //self.timerStep();
+            self.processor.timer_step();
             //self.ppuStep();
             self.clock += 1;
         }
