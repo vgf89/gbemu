@@ -43,7 +43,7 @@ pub const INSTRUCTIONS: &'static [Instruction/*; 256*/] = &[
     Instruction {disas: "DEC D", cycles: 4, execute: FnEnum::OpLen1(CPU::dec_d)},                      // 0x15
     Instruction {disas: "LD D, {:#04X}", cycles: 8, execute: FnEnum::OpLen2(CPU::ld_d_n)},              // 0x16
     Instruction {disas: "RLA", cycles: 4, execute: FnEnum::OpLen1(CPU::rla)},                          // 0x17
-    Instruction {disas: "JR {:+#04X}", cycles: 12, execute: FnEnum::OpLen2i(CPU::jr_nn)},                 // 0x18
+    Instruction {disas: "JR {:+#04X}", cycles: 12, execute: FnEnum::OpLen2i(CPU::jr_n)},                 // 0x18
     Instruction {disas: "ADD HL, DE", cycles: 8, execute: FnEnum::OpLen1(CPU::add_hl_de)},             // 0x19
     Instruction {disas: "LD A, (DE)", cycles: 8, execute: FnEnum::OpLen1(CPU::ld_a_dep)},              // 0x1A
     Instruction {disas: "DEC DE", cycles: 8, execute: FnEnum::OpLen1(CPU::dec_de)},                    // 0x1B

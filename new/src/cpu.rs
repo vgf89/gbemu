@@ -25,6 +25,7 @@ pub struct CPU {
     pub halt_bug: bool,
 
     pub memory: RefCell<Memory>,
+    broken: bool,
 }
 
 pub const FLAGS_ZERO:u8 = 1 << 7;
@@ -55,6 +56,7 @@ impl CPU {
             halted: false,
             halt_bug: false,
             memory: mem,
+            broken: false,
         };
     }
 
@@ -89,6 +91,12 @@ impl CPU {
     pub fn set_hl(&mut self, value:u16) {
         self.h = ((value >> 8) & 0xff) as u8;
         self.l = (value & 0xff) as u8;
+    }
+    fn bcp(&self) -> u8 {
+        return self.memory.borrow().read_byte(self.bc());
+    }
+    fn dep(&self) -> u8 {
+        return self.memory.borrow().read_byte(self.de());
     }
     fn hlp(&self) -> u8 {
         return self.memory.borrow().read_byte(self.hl());
@@ -131,9 +139,21 @@ impl CPU {
         }
 
 
-        // Debug print & wait to step
-        self.print_status();
-        stdin().read_line(&mut String::new()).unwrap();
+        //self.print_status();
+        let breakpoints = vec![/*0x0100u16, 0xC000u16*/];
+        if breakpoints.contains(&self.pc)
+        {
+            self.broken = true;
+            println!("Breakpoint hit! {:#06X}", self.pc);
+        }
+        if self.broken {
+            // Debug print & wait to step
+            let mut input = String::new();
+            stdin().read_line(&mut input).unwrap();
+            if input.contains("c") {
+                self.broken = false;
+            }
+        }
 
         // Handle Interrupts
         if self.ime_flag {
@@ -188,24 +208,26 @@ impl CPU {
         }
         // FIXME: Implement
 
-        let opcode_length;
-        let mut operand8 = 0;
-        let mut operand16 = 0;
+        let operand_length;
+        let mut operandu8 = 0;
+        let mut operandi8 = 0;
+        let mut operandu16 = 0;
         let opcode = self.memory.borrow().read_byte(self.pc);
+        self.pc += 1;
         let inst: &Instruction = &ops_table::INSTRUCTIONS[opcode as usize];
         match &inst.execute {
-            FnEnum::OpLen1(_) => { opcode_length = 1; },
+            FnEnum::OpLen1(_) => { operand_length = 0; },
             FnEnum::OpLen2(_) => {
-                opcode_length = 2;
-                operand8 = self.memory.borrow().read_byte(self.pc + 1);
+                operand_length = 1;
+                operandu8 = self.memory.borrow().read_byte(self.pc);
             },
             FnEnum::OpLen2i(_) => {
-                opcode_length = 2;
-                operand8 = self.memory.borrow().read_byte(self.pc + 1);
+                operand_length = 1;
+                operandi8 = self.memory.borrow().read_byte(self.pc) as i8;
             },
             FnEnum::OpLen3(_) => {
-                opcode_length = 3;
-                operand16 = self.memory.borrow().read_word(self.pc + 1);
+                operand_length = 2;
+                operandu16 = self.memory.borrow().read_word(self.pc);
             },
             FnEnum::STOP => todo!(),
             FnEnum::UNDEFINED => todo!(),
@@ -217,7 +239,7 @@ impl CPU {
             self.halt_bug = false;
         } else {
             if !self.halted {
-                self.pc += opcode_length;
+                self.pc += operand_length;
             }
         }
 
@@ -233,13 +255,13 @@ impl CPU {
                 (op)(self);
             },
             FnEnum::OpLen2(op) => {
-                (op)(self, operand8);
+                (op)(self, operandu8);
             },
             FnEnum::OpLen2i(op) => {
-                (op)(self, operand8 as i8);
+                (op)(self, operandi8);
             },
             FnEnum::OpLen3(op) => {
-                (op)(self, operand16);
+                (op)(self, operandu16);
             },
             FnEnum::STOP => todo!(),
             FnEnum::UNDEFINED => todo!(),
@@ -255,7 +277,7 @@ impl CPU {
     }
 
     pub fn print_regs(&self) {
-        print!("pc:  {:#06X},  af: {:#06X},  bc: {:#06X},  de: {:#06X},  hl: {:#06X}->{:#04X}, flags: {:#010b}", self.pc, self.af(), self.bc(), self.de(), self.hl(), self.hlp(), self.f);
+        print!("pc:  {:#06X},  af: {:#06X},  bc: {:#06X}->{:#04X},  de: {:#06X}->{:#04X},  hl: {:#06X}->{:#04X}, flags: {:#010b}", self.pc, self.af(), self.bc(), self.bcp(), self.de(), self.dep(), self.hl(), self.hlp(), self.f);
     }
 
     pub fn print_disas(&self, address: u16) {
@@ -327,15 +349,21 @@ impl CPU {
     pub fn inc_c(&mut self) { self.c = self.inc_n(self.c); }
     pub fn inc_d(&mut self) { self.d = self.inc_n(self.d); }
     pub fn inc_e(&mut self) { self.e = self.inc_n(self.e); }
+    pub fn inc_h(&mut self) { self.h = self.inc_n(self.h); }
+    pub fn inc_l(&mut self) { self.l = self.inc_n(self.l); }
+    pub fn inc_hl(&mut self) { self.set_hl(self.hl() + 1); }
 
     pub fn dec_a(&mut self) { self.a = self.dec_n(self.a); }
     pub fn dec_b(&mut self) { self.b = self.dec_n(self.b); }
     pub fn dec_c(&mut self) { self.c = self.dec_n(self.c); }
     pub fn dec_d(&mut self) { self.d = self.dec_n(self.d); }
     pub fn dec_e(&mut self) { self.e = self.dec_n(self.e); }
+    pub fn dec_h(&mut self) { self.h = self.dec_n(self.h); }
+    pub fn dec_l(&mut self) { self.l = self.dec_n(self.l); }
+    pub fn dec_hl(&mut self) { self.set_hl(self.hl() - 1); }
 
-    pub fn inc_bc(&mut self) { self.set_bc(self.bc() + 1); }
-    pub fn inc_de(&mut self) { self.set_de(self.de() + 1); }
+    pub fn inc_bc(&mut self) { self.set_bc(self.bc().wrapping_add(1)); }
+    pub fn inc_de(&mut self) { self.set_de(self.de().wrapping_add(1)); }
 
     pub fn ld_bc_nn(&mut self, value: u16) { self.set_bc(value); }
     pub fn ld_bcp_a(&mut self) { self.memory.borrow_mut().write_byte(self.bc(), self.a); }
@@ -377,7 +405,25 @@ impl CPU {
         self.flags_clear(FLAGS_HALFCARRY);
     }
 
-    pub fn jr_nn(&mut self, offset: i8) { self.pc = self.pc.wrapping_add(offset as u16); }
+    pub fn jr_n(&mut self, offset: i8) {
+        self.pc = (self.pc as i16 + offset as i16) as u16;
+    }
+
+    pub fn jr_z(&mut self, offset:i8) {
+        if self.flags_is_zero() {
+            self.jr_n(offset);
+            //self.cpu_clock += 4;
+        }
+    }
+
+    pub fn jr_nz(&mut self, offset: i8) {
+        if self.flags_is_zero() == false
+        {
+            self.jr_n(offset);
+            //self.cpu_clock += 4;
+        }
+    }
+
     pub fn add_hl_de(&mut self) { self.add_hl_nn(self.de()); }
     pub fn ld_a_dep(&mut self) { self.a = self.memory.borrow_mut().read_byte(self.de()); }
     pub fn dec_de(&mut self) { self.set_de(self.de() - 1); }
@@ -390,13 +436,6 @@ impl CPU {
         self.flags_clear(FLAGS_NEGATIVE);
         self.flags_clear(FLAGS_HALFCARRY);
     }
-    pub fn jr_nz(&mut self, offset: i8) {
-        if self.flags_is_zero() == false
-        {
-            self.jr_nn(offset);
-            self.cpu_clock += 4;
-        }
-    }
 
     pub fn ld_hl_nn(&mut self, value: u16) {
         self.set_hl(value);
@@ -405,9 +444,6 @@ impl CPU {
         self.set_hlp(self.a);
         self.set_hl(self.hl() + 1);
     }
-    pub fn inc_hl(&mut self) { self.set_hl(self.hl() + 1); }
-    pub fn inc_h(&mut self) { self.h = self.h + 1; }
-    pub fn dec_h(&mut self) { self.h = self.h - 1; }
     pub fn ld_h_n(&mut self, value: u8) { self.h = value; }
     pub fn daa(&mut self) {
         // https://ehaskins.com/2018-01-30%20Z80%20DAA/
@@ -423,7 +459,7 @@ impl CPU {
             flag_c = true;
         }
     
-        self.a = self.a + ( if self.flags_is_negative() { (-(correction as i8)) as u8 } else { correction });
+        self.a = self.a.wrapping_add( if self.flags_is_negative() { (-(correction as i8)) as u8 } else { correction });
     
         self.flags_clear(FLAGS_ZERO);
         self.flags_clear(FLAGS_HALFCARRY);
@@ -437,13 +473,6 @@ impl CPU {
         }
     }
 
-    pub fn jr_z(&mut self, offset:i8) {
-        if self.flags_is_zero() {
-            self.pc = self.pc.wrapping_add(offset as u16);
-            self.cpu_clock += 4;
-        }
-    }
-
     pub fn add_hl_hl(&mut self) {
         self.add_hl_nn(self.hl());
     }
@@ -453,9 +482,6 @@ impl CPU {
         self.set_hl(self.hl() + 1);
     }
 
-    pub fn dec_hl(&mut self) { self.set_hl(self.hl() - 1); }
-    pub fn inc_l(&mut self) { self.l += 1; }
-    pub fn dec_l(&mut self) { self.l -= 1; }
     pub fn ld_l_n(&mut self, value: u8) { self.l = value; }
 
     pub fn cpl(&mut self) {
@@ -637,7 +663,7 @@ impl CPU {
             self.flags_set(FLAGS_CARRY);
         }
     
-        self.a += n;
+        self.a = self.a.wrapping_add(n);
     
         if self.a == 0 {
             self.flags_set(FLAGS_ZERO)
@@ -687,14 +713,14 @@ impl CPU {
 
     pub fn sub_a_n(&mut self, n: u8) {
         self.reset_flags();
-        if (((self.a & 0xf) - (n & 0xf)) & 0x10) == 0x10 {
+        if (((self.a & 0xf).wrapping_sub(n & 0xf)) & 0x10) == 0x10 {
             self.flags_set(FLAGS_HALFCARRY);
         }
-        if ((self.a as u16 - n as u16) & 0x100) == 0x100 {
+        if (((self.a as u16).wrapping_sub(n as u16)) & 0x100) == 0x100 {
             self.flags_set(FLAGS_CARRY);
         }
     
-        self.a -= n;
+        self.a = self.a.wrapping_sub(n);
     
         if self.a == 0 {
             self.flags_set(FLAGS_ZERO)
@@ -810,10 +836,10 @@ impl CPU {
 
     pub fn cp_n(&mut self, n: u8) {
         self.reset_flags();
-        if (((self.a & 0xf) - (n & 0xf)) & 0x10) == 0x10 {
+        if (((self.a & 0xf).wrapping_sub(n & 0xf)) & 0x10) == 0x10 {
             self.flags_set(FLAGS_HALFCARRY);
         }
-        if ((self.a as u16 - n as u16) & 0x100) == 0x100 {
+        if (((self.a as u16).wrapping_sub(n as u16)) & 0x100) == 0x100 {
             self.flags_set(FLAGS_CARRY);
         }
         if self.a == n {

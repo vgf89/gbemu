@@ -18,8 +18,10 @@ pub struct Gameboy {
 impl Gameboy {
     pub fn new() -> Self {
         let mem: RefCell<Memory> = RefCell::new(Memory::default());
-        mem.borrow_mut().load_rom("testroms/gb-test-roms-master/cpu_instrs/individual/01-special.gb".to_string());
+        //mem.borrow_mut().load_rom("testroms/gb-test-roms-master/cpu_instrs/individual/01-special.gb".to_string());
         //mem.borrow_mut().load_rom("/home/holopengin/repos/gbemu/new/testroms/mts-20220522-1522-55c535c/acceptance/boot_regs-dmg0.gb".to_string());
+        mem.borrow_mut().load_rom("testroms/gb-test-roms-master/cpu_instrs/cpu_instrs.gb".to_string());
+        //mem.borrow_mut().load_rom("testroms/gb-test-roms-master/instr_timing/instr_timing.gb".to_string());
         let proc = CPU::new(mem);
         
 
@@ -100,6 +102,7 @@ impl Gameboy {
         self.frames += 1;
 
 
+        self.processor.reset_cpu_clock(MAX_CLOCK as u16);
         //self.reset_cpu_clock(MAX_CLOCK);
         //self.reset_ppu_clock(MAX_CLOCK);
         

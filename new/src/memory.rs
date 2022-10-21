@@ -119,6 +119,7 @@ impl Memory {
             },
             MBC1 => {
                 println!("Loading MBC1 Cartidge");
+                self.cartridge_type = MBC1;
                 file.seek(SeekFrom::Start(0)).unwrap();
                 let mut buf = [0u8; 0x4000];
                 let mut i = 0;
@@ -138,7 +139,8 @@ impl Memory {
             return self.mbc_1_banks[0][address as usize];
         }
         if self.cartridge_type == MBC1 && address >= 0x4000 && address < 0x8000 {
-            return self.mbc_1_banks[self.mbc_1_bank_nn as usize][address as usize - 0x4000];
+            let bank = self.mbc_1_bank_nn + 1; // 0x4000-0x7fff Banks are mapped 1 higher. Hardware quirk
+            return self.mbc_1_banks[bank as usize][address as usize - 0x4000];
         }
         if address >= 0xfea0 && address < 0xff00 {
             return 0xff;
@@ -155,7 +157,7 @@ impl Memory {
 
     pub fn write_byte(&mut self, address:u16, val:u8) {
         if address == 0xff02  && val == 0x81 { // Print link cable output to terminal
-            println!("{}", self.read_byte(0xff01) as char);
+            print!("{}", self.read_byte(0xff01) as char);
             use std::io::{self, Write};
             io::stdout().flush().unwrap();
         } else if address >= 0xfea0 && address < 0xff00 {
